@@ -21,7 +21,7 @@ export interface Villager {
 }
 
 export interface Storage {
-  barn: { amount: number; cap: number };
+  barn: { amount: number };
 }
 
 export interface Resources {

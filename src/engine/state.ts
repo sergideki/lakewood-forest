@@ -1,7 +1,5 @@
 import type { GameState } from './types';
 
-const BARN_CAP = 500;
-
 export function createInitialState(now: number): GameState {
   return {
     resources: { gold: 0 },
@@ -15,7 +13,7 @@ export function createInitialState(now: number): GameState {
       { id: 'vil-2', name: 'Nan', emoji: '👵', assignedTo: null },
       { id: 'vil-3', name: 'Rowan', emoji: '🧔', assignedTo: null },
     ],
-    storage: { barn: { amount: 0, cap: BARN_CAP } },
+    storage: { barn: { amount: 0 } },
     meta: { lastSeen: now },
   };
 }

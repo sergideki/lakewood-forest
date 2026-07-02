@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialState, plantCrop, assignVillager, applyElapsed } from '../../src/engine';
+import { createInitialState, plantCrop, assignVillager, applyElapsed, barnCap } from '../../src/engine';
 
 function activeFarm(now: number) {
   let s = createInitialState(now);
@@ -37,7 +37,7 @@ describe('applyElapsed', () => {
     const s0 = activeFarm(0);
     const week = 7 * 24 * 3600 * 1000;
     const s1 = applyElapsed(s0, week);
-    expect(s1.storage.barn.amount).toBe(s1.storage.barn.cap);
+    expect(s1.storage.barn.amount).toBe(barnCap(s1));
   });
 
   it('does not mutate its input (immutability)', () => {

@@ -2,11 +2,14 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { theme } from '../theme';
 import { cards } from '../styles';
 import { useGameStore } from '../../store/gameStore';
+import { barnCap } from '../../engine';
 
 export function BarnCard() {
-  const barn = useGameStore((s) => s.state.storage.barn);
+  const state = useGameStore((s) => s.state);
   const collect = useGameStore((s) => s.collect);
-  const pct = Math.min(100, Math.round((barn.amount / barn.cap) * 100));
+  const barn = state.storage.barn;
+  const cap = barnCap(state);
+  const pct = Math.min(100, Math.round((barn.amount / cap) * 100));
   const amount = Math.floor(barn.amount);
 
   return (
@@ -21,7 +24,7 @@ export function BarnCard() {
           <Text style={styles.btnText}>Collect {amount}</Text>
         </Pressable>
       </View>
-      <Text style={cards.sub}>{amount} / {barn.cap} gold stored ({pct}%)</Text>
+      <Text style={cards.sub}>{amount} / {cap} gold stored ({pct}%)</Text>
       <View style={styles.meter}><View style={[styles.fill, { width: `${pct}%` }]} /></View>
     </View>
   );

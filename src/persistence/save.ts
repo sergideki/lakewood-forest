@@ -39,8 +39,8 @@ function isValidState(state: unknown): state is GameState {
   if (!s.meta || typeof s.meta !== 'object') return false;
   const storage = s.storage as { barn?: unknown } | undefined;
   if (!storage || typeof storage !== 'object') return false;
-  const barn = storage.barn as { amount?: unknown; cap?: unknown } | undefined;
+  const barn = storage.barn as { amount?: unknown } | undefined;
   if (!barn || typeof barn !== 'object') return false;
-  if (typeof barn.amount !== 'number' || typeof barn.cap !== 'number') return false;
+  if (typeof barn.amount !== 'number') return false;
   return true;
 }

@@ -1,6 +1,15 @@
 import type { GameState, CropId } from './types';
 import { CROPS } from './content';
 
+/** The barn holds this many hours of the current production rate before it's "full". */
+export const BARN_HOURS = 24;
+
+/** Derived barn capacity = a day's worth of the current farm rate, with a sane floor. */
+export function barnCap(state: GameState): number {
+  const perDay = farmRatePerSec(state) * BARN_HOURS * 3600;
+  return Math.max(500, Math.round(perDay));
+}
+
 /** Gold produced per second across all planted plots, gated + boosted by farm villagers. */
 export function farmRatePerSec(state: GameState): number {
   const assigned = state.villagers.filter((v) => v.assignedTo === 'farm').length;
@@ -37,11 +46,12 @@ export function assignVillager(
 /** Fill the barn by the farm rate over `elapsedSec`, clamped to [0, cap]. */
 export function accrueBarn(state: GameState, elapsedSec: number): GameState {
   if (elapsedSec <= 0) return state;
-  const rate = farmRatePerSec(state);
-  const gained = rate * elapsedSec;
-  const cap = state.storage.barn.cap;
-  const amount = Math.min(cap, state.storage.barn.amount + gained);
-  return { ...state, storage: { ...state.storage, barn: { ...state.storage.barn, amount } } };
+  const cap = barnCap(state);
+  const gained = farmRatePerSec(state) * elapsedSec;
+  const current = state.storage.barn.amount;
+  const room = Math.max(0, cap - current);
+  const amount = current + Math.min(gained, room); // grows toward cap, never reduces current
+  return { ...state, storage: { ...state.storage, barn: { amount } } };
 }
 
 /** Bank the whole-gold part of the barn into gold; carry the fractional remainder. */

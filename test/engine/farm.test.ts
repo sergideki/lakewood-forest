@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialState } from '../../src/engine';
+import { createInitialState, barnCap } from '../../src/engine';
 
 describe('createInitialState', () => {
   it('starts with three empty plots, three villagers, an empty capped barn, and starter gold', () => {
@@ -9,7 +9,7 @@ describe('createInitialState', () => {
     expect(s.villagers).toHaveLength(3);
     expect(s.villagers.every((v) => v.assignedTo === null)).toBe(true);
     expect(s.storage.barn.amount).toBe(0);
-    expect(s.storage.barn.cap).toBeGreaterThan(0);
+    expect(barnCap(s)).toBe(500);
     expect(s.resources.gold).toBeGreaterThanOrEqual(0);
     expect(s.meta.lastSeen).toBe(1000);
   });
@@ -79,7 +79,7 @@ describe('accrueBarn', () => {
     s = plantCrop(s, 'plot-1', 'wheat');
     s = assignVillager(s, 'vil-1', 'farm');
     s = accrueBarn(s, 10_000_000);          // would be huge
-    expect(s.storage.barn.amount).toBe(s.storage.barn.cap);
+    expect(s.storage.barn.amount).toBe(barnCap(s));
   });
 
   it('does nothing when elapsed is zero or negative', () => {
