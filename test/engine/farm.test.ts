@@ -56,3 +56,41 @@ describe('plantCrop / assignVillager', () => {
     expect(s.villagers.find((v) => v.id === 'vil-1')!.assignedTo).toBeNull();
   });
 });
+
+import { accrueBarn, collectBarn } from '../../src/engine';
+
+describe('accrueBarn', () => {
+  it('adds rate * elapsed to the barn', () => {
+    let s = createInitialState(0);
+    s = plantCrop(s, 'plot-1', 'wheat');   // 0.05/s
+    s = assignVillager(s, 'vil-1', 'farm');
+    s = accrueBarn(s, 200);                 // 0.05 * 200 = 10
+    expect(s.storage.barn.amount).toBeCloseTo(10, 5);
+  });
+
+  it('never exceeds the cap', () => {
+    let s = createInitialState(0);
+    s = plantCrop(s, 'plot-1', 'wheat');
+    s = assignVillager(s, 'vil-1', 'farm');
+    s = accrueBarn(s, 10_000_000);          // would be huge
+    expect(s.storage.barn.amount).toBe(s.storage.barn.cap);
+  });
+
+  it('does nothing when elapsed is zero or negative', () => {
+    let s = createInitialState(0);
+    s = plantCrop(s, 'plot-1', 'wheat');
+    s = assignVillager(s, 'vil-1', 'farm');
+    expect(accrueBarn(s, 0).storage.barn.amount).toBe(0);
+    expect(accrueBarn(s, -50).storage.barn.amount).toBe(0);
+  });
+});
+
+describe('collectBarn', () => {
+  it('moves the whole barn into gold and empties the barn', () => {
+    let s = createInitialState(0);
+    s.storage.barn.amount = 42;
+    s = collectBarn(s);
+    expect(s.resources.gold).toBe(42);
+    expect(s.storage.barn.amount).toBe(0);
+  });
+});

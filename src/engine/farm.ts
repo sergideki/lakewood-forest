@@ -33,3 +33,23 @@ export function assignVillager(
     ),
   };
 }
+
+/** Fill the barn by the farm rate over `elapsedSec`, clamped to [0, cap]. */
+export function accrueBarn(state: GameState, elapsedSec: number): GameState {
+  if (elapsedSec <= 0) return state;
+  const rate = farmRatePerSec(state);
+  const gained = rate * elapsedSec;
+  const cap = state.storage.barn.cap;
+  const amount = Math.min(cap, state.storage.barn.amount + gained);
+  return { ...state, storage: { ...state.storage, barn: { ...state.storage.barn, amount } } };
+}
+
+/** Bank the barn's contents into gold and empty it. */
+export function collectBarn(state: GameState): GameState {
+  const banked = Math.floor(state.storage.barn.amount);
+  return {
+    ...state,
+    resources: { ...state.resources, gold: state.resources.gold + banked },
+    storage: { ...state.storage, barn: { ...state.storage.barn, amount: 0 } },
+  };
+}
