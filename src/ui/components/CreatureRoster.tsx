@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { theme } from '../theme';
+import { cards } from '../styles';
 import { useGameStore } from '../../store/gameStore';
 import { getDungeon } from '../../engine';
 import type { Rarity } from '../../engine/types';
@@ -15,9 +16,9 @@ export function CreatureRoster() {
   const assignTo = useGameStore((s) => s.assignCreatureTo);
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>🐿️ Creatures</Text>
-      <Text style={styles.sub}>Tap to send foraging (🪵/🌰 by nature); dungeon teams are set below</Text>
+    <View style={cards.card}>
+      <Text style={cards.title}>🐿️ Creatures</Text>
+      <Text style={cards.sub}>Tap to send foraging (🪵/🌰 by nature); dungeon teams are set below</Text>
       {creatures.map((c) => {
         const inDungeon = c.assignment.type === 'dungeon';
         const foraging = c.assignment.type === 'forage';
@@ -45,10 +46,6 @@ export function CreatureRoster() {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: theme.card, borderColor: theme.cardBorder, borderWidth: 1,
-    borderRadius: theme.radius, padding: 12, marginHorizontal: 16, marginBottom: theme.gap },
-  title: { color: theme.text, fontSize: 16, fontWeight: '700' },
-  sub: { color: theme.textDim, fontSize: 12, marginTop: 2, marginBottom: 8 },
   rowItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, paddingHorizontal: 10,
     borderRadius: 10, backgroundColor: '#26332a', marginBottom: 6, borderWidth: 1, borderColor: 'transparent' },
   rowItemOn: { borderColor: theme.accent, backgroundColor: '#2e4535' },
