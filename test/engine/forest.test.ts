@@ -236,4 +236,19 @@ describe('collectRun', () => {
     const next = collectRun(s, HOLLOW, seqRng([0.0, 0.0]), 1000 + HOLLOW_MS);
     expect(next.discovered.length).toBe(before + 1);
   });
+
+  it('clamps loot multiplier to a 1.5 ceiling for an overpowered team', () => {
+    const hollow = getDungeon(HOLLOW)!; // recommendedPower 2
+    // Bump both starters to L4 => teamPower = 1*4 + 1*4 = 8, /2 = 4.0 => must clamp to 1.5.
+    let s = createInitialState(0);
+    s = { ...s, creatures: s.creatures.map((c) =>
+      ['cr-fernling', 'cr-pebblepup'].includes(c.id) ? { ...c, level: 4 } : c) };
+    s = startRun(s, HOLLOW, ['cr-fernling', 'cr-pebblepup'], 1000);
+    const next = collectRun(s, HOLLOW, () => 0.99, 1000 + HOLLOW_MS); // discovery miss
+    expect(next.resources.gold).toBe(Math.floor(hollow.loot.gold * 1.5));
+    expect(next.resources.wood).toBe(Math.floor(hollow.loot.wood * 1.5));
+    expect(next.resources.acorns).toBe(Math.floor(hollow.loot.acorn * 1.5));
+    // NOT the unclamped 4.0x value — makes the ceiling intent explicit.
+    expect(next.resources.gold).not.toBe(Math.floor(hollow.loot.gold * 4));
+  });
 });
