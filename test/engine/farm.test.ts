@@ -12,7 +12,6 @@ describe('createInitialState', () => {
     expect(s.storage.barn.cap).toBeGreaterThan(0);
     expect(s.resources.gold).toBeGreaterThanOrEqual(0);
     expect(s.meta.lastSeen).toBe(1000);
-    expect(s.meta.version).toBe(1);
   });
 });
 

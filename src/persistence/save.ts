@@ -24,7 +24,7 @@ export function deserialize(json: string | null): GameState {
     if (!isValidState(parsed.state)) {
       return createInitialState(Date.now());
     }
-    return migrate(parsed.version, parsed.state);
+    return parsed.state;
   } catch {
     return createInitialState(Date.now());
   }
@@ -43,10 +43,4 @@ function isValidState(state: unknown): state is GameState {
   if (!barn || typeof barn !== 'object') return false;
   if (typeof barn.amount !== 'number' || typeof barn.cap !== 'number') return false;
   return true;
-}
-
-/** Version migrations go here as the schema evolves. v1 is the baseline. */
-function migrate(fromVersion: number, state: GameState): GameState {
-  // No migrations yet; v1 state is returned as-is.
-  return state;
 }

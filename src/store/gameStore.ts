@@ -17,47 +17,38 @@ interface GameStore {
   loaded: boolean;
   load: () => Promise<void>;
   tick: (now: number) => void;
-  plant: (plotId: string, cropId: CropId) => void;
+  plant: (plotId: string, cropId: CropId | null) => void;
   assign: (villagerId: string, to: 'farm' | null) => void;
   collect: () => void;
+  save: () => void;
 }
 
 function persist(state: GameState) {
   AsyncStorage.setItem(STORAGE_KEY, serialize(state)).catch(() => {});
 }
 
-export const useGameStore = create<GameStore>((set, get) => ({
-  state: createInitialState(Date.now()),
-  loaded: false,
+export const useGameStore = create<GameStore>((set, get) => {
+  const commit = (next: GameState) => { persist(next); set({ state: next }); };
 
-  load: async () => {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    const restored = applyElapsed(deserialize(raw), Date.now());
-    persist(restored);
-    set({ state: restored, loaded: true });
-  },
+  return {
+    state: createInitialState(Date.now()),
+    loaded: false,
 
-  tick: (now) => {
-    const next = applyElapsed(get().state, now);
-    persist(next);
-    set({ state: next });
-  },
+    load: async () => {
+      const raw = await AsyncStorage.getItem(STORAGE_KEY);
+      const restored = applyElapsed(deserialize(raw), Date.now());
+      persist(restored);
+      set({ state: restored, loaded: true });
+    },
 
-  plant: (plotId, cropId) => {
-    const next = plantCrop(applyElapsed(get().state, Date.now()), plotId, cropId);
-    persist(next);
-    set({ state: next });
-  },
+    tick: (now) => set({ state: applyElapsed(get().state, now) }),
 
-  assign: (villagerId, to) => {
-    const next = assignVillager(applyElapsed(get().state, Date.now()), villagerId, to);
-    persist(next);
-    set({ state: next });
-  },
+    plant: (plotId, cropId) => commit(plantCrop(applyElapsed(get().state, Date.now()), plotId, cropId)),
 
-  collect: () => {
-    const next = collectBarn(applyElapsed(get().state, Date.now()));
-    persist(next);
-    set({ state: next });
-  },
-}));
+    assign: (villagerId, to) => commit(assignVillager(applyElapsed(get().state, Date.now()), villagerId, to)),
+
+    collect: () => commit(collectBarn(applyElapsed(get().state, Date.now()))),
+
+    save: () => persist(get().state),
+  };
+});

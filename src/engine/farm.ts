@@ -14,7 +14,7 @@ export function farmRatePerSec(state: GameState): number {
   return base * multiplier;
 }
 
-export function plantCrop(state: GameState, plotId: string, cropId: CropId): GameState {
+export function plantCrop(state: GameState, plotId: string, cropId: CropId | null): GameState {
   return {
     ...state,
     plots: state.plots.map((p) => (p.id === plotId ? { ...p, crop: cropId } : p)),

@@ -18,7 +18,6 @@ export interface Villager {
   name: string;
   emoji: string;
   assignedTo: 'farm' | null;
-  level: number;
 }
 
 export interface Storage {
@@ -27,13 +26,10 @@ export interface Storage {
 
 export interface Resources {
   gold: number;
-  wood: number;
-  acorns: number;
 }
 
 export interface Meta {
   lastSeen: number; // epoch ms
-  version: number;
 }
 
 export interface GameState {
