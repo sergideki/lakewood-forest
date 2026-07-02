@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, plantCrop, assignVillager, applyElapsed, barnCap } from '../../src/engine';
+import { assignCreature } from '../../src/engine/forest';
 
 function activeFarm(now: number) {
   let s = createInitialState(now);
@@ -47,5 +48,26 @@ describe('applyElapsed', () => {
     expect(s0.meta.lastSeen).toBe(before); // input untouched
     expect(s0.storage.barn.amount).toBe(0);
     expect(result).not.toBe(s0);
+  });
+});
+
+describe('applyElapsed (forest)', () => {
+  it('fills the satchel and drips forager XP over the wall-clock gap', () => {
+    let s = createInitialState(1_000);
+    s = assignCreature(s, 'cr-fernling', 'forage'); // acorn 0.05/s
+    const next = applyElapsed(s, 1_000 + 200_000);  // +200s
+    expect(next.storage.satchel.acorn).toBeCloseTo(10, 5); // 0.05 * 200
+    const fern = next.creatures.find((c) => c.id === 'cr-fernling')!;
+    expect(fern.xp).toBeCloseTo(0.02 * 200, 5); // 4 xp
+    expect(next.meta.lastSeen).toBe(1_000 + 200_000);
+  });
+
+  it('leaves dungeon runs to be collected later (no auto-collect)', () => {
+    let s = createInitialState(0);
+    s = { ...s, dungeons: s.dungeons.map((d) => d.id === 'hollow'
+      ? { ...d, activeRun: { creatureIds: ['cr-fernling'], startedAt: 0 } } : d) };
+    const next = applyElapsed(s, 10 * 3600 * 1000); // long after it would be ready
+    expect(next.dungeons.find((d) => d.id === 'hollow')!.activeRun).not.toBeNull();
+    expect(next.resources.gold).toBe(0); // nothing paid until collectRun
   });
 });
