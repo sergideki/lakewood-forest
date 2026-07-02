@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { makeCreature } from '../../src/engine';
+import { makeCreature, SPECIES } from '../../src/engine';
 import {
   creatureForageOutput,
   levelMult,
   xpForLevel,
   grantXp,
   teamPower,
+  rollDiscovery,
+  dripForagerXp,
 } from '../../src/engine/creatures';
 import { createInitialState } from '../../src/engine';
 
@@ -68,5 +70,53 @@ describe('teamPower', () => {
     // level pebblepup to L2 => weight 1 * 2 = 2, total 3
     s = { ...s, creatures: s.creatures.map((c) => (c.id === 'cr-pebblepup' ? { ...c, level: 2 } : c)) };
     expect(teamPower(s, ['cr-fernling', 'cr-pebblepup'])).toBe(3);
+  });
+});
+
+function seqRng(values: number[]): () => number {
+  let i = 0;
+  return () => (i < values.length ? values[i++] : values[values.length - 1] ?? 0);
+}
+
+describe('rollDiscovery', () => {
+  it('does nothing when the hit roll misses (rng >= chance)', () => {
+    const s = createInitialState(0);
+    const next = rollDiscovery(s, 0.5, seqRng([0.9]));
+    expect(next.discovered).toEqual(s.discovered);
+    expect(next.creatures).toHaveLength(2);
+  });
+
+  it('adds a new undiscovered species when the hit roll succeeds', () => {
+    const s = createInitialState(0);
+    // first rng < chance = hit; second rng selects within the weighted pool
+    const next = rollDiscovery(s, 0.5, seqRng([0.0, 0.0]));
+    expect(next.discovered.length).toBe(3);
+    expect(next.creatures.length).toBe(3);
+    const added = next.creatures.find((c) => !s.creatures.some((o) => o.id === c.id))!;
+    expect(added.assignment.type).toBe('idle');
+  });
+
+  it('is a no-op when every species is already discovered', () => {
+    let s = createInitialState(0);
+    const all = Object.keys(SPECIES);
+    s = { ...s, discovered: all };
+    const next = rollDiscovery(s, 1.0, seqRng([0.0, 0.0]));
+    expect(next.discovered.length).toBe(all.length);
+    expect(next.creatures.length).toBe(s.creatures.length);
+  });
+});
+
+describe('dripForagerXp', () => {
+  it('grants xp only to foraging creatures over elapsed seconds', () => {
+    let s = createInitialState(0);
+    s = { ...s, creatures: s.creatures.map((c) =>
+      c.id === 'cr-fernling'
+        ? { ...c, assignment: { type: 'forage' as const, dungeonId: null, startedAt: 0 } }
+        : c) };
+    s = dripForagerXp(s, 100); // 0.02 * 100 = 2 xp
+    const fern = s.creatures.find((c) => c.id === 'cr-fernling')!;
+    const pebble = s.creatures.find((c) => c.id === 'cr-pebblepup')!;
+    expect(fern.xp).toBeCloseTo(2, 5);
+    expect(pebble.xp).toBe(0); // idle, no xp
   });
 });
