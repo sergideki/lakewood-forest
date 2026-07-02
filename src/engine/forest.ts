@@ -79,7 +79,7 @@ export function startRun(state: GameState, dungeonId: string, creatureIds: strin
   if (creatureIds.length === 0) return state;
   const team = state.creatures.filter((c) => creatureIds.includes(c.id));
   if (team.length !== creatureIds.length) return state;               // unknown id
-  if (team.some((c) => c.assignment.type === 'dungeon')) return state; // busy elsewhere
+  if (team.some((c) => c.assignment.type !== 'idle')) return state; // must be resting to delve
 
   return {
     ...state,

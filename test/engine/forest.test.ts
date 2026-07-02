@@ -189,6 +189,13 @@ describe('startRun', () => {
     // fernling is busy => starting grove with it is a no-op
     expect(startRun(running, 'grove', ['cr-fernling'], 2000).dungeons.find((d) => d.id === 'grove')!.activeRun).toBeNull();
   });
+
+  it('is a no-op when a chosen creature is foraging (must be resting to delve)', () => {
+    const s = assignCreature(createInitialState(0), 'cr-fernling', 'forage');
+    const next = startRun(s, HOLLOW, ['cr-fernling'], 1000);
+    expect(next.dungeons.find((d) => d.id === HOLLOW)!.activeRun).toBeNull();
+    expect(next.creatures.find((c) => c.id === 'cr-fernling')!.assignment.type).toBe('forage');
+  });
 });
 
 describe('isRunReady', () => {

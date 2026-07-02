@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { theme } from '../theme';
 import { cards } from '../styles';
@@ -19,13 +19,19 @@ export function DungeonCard({ dungeonId, now }: { dungeonId: string; now: number
   const def = getDungeon(dungeonId)!;
   const dungeon = useGameStore((s) => s.state.dungeons.find((d) => d.id === dungeonId)!);
   const idleCreatures = useGameStore((s) => s.state.creatures.filter((c) => c.assignment.type === 'idle'));
-  const powerOf = useGameStore((s) => (ids: string[]) => teamPower(s.state, ids));
+  const state = useGameStore((s) => s.state);
   const startDungeon = useGameStore((s) => s.startDungeon);
   const collectDungeon = useGameStore((s) => s.collectDungeon);
 
   const [selected, setSelected] = useState<string[]>([]);
   const toggle = (id: string) =>
     setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+
+  // Only creatures still idle can delve — drop any that left the idle set (e.g. sent foraging).
+  const validSelected = selected.filter((id) => idleCreatures.some((c) => c.id === id));
+  useEffect(() => {
+    setSelected((cur) => cur.filter((id) => idleCreatures.some((c) => c.id === id)));
+  }, [idleCreatures]);
 
   const run = dungeon.activeRun;
   const remaining = run ? Math.ceil((run.startedAt + def.durationSec * 1000 - now) / 1000) : 0;
@@ -53,11 +59,11 @@ export function DungeonCard({ dungeonId, now }: { dungeonId: string; now: number
             })}
           </View>
           <Pressable
-            style={[styles.btn, selected.length === 0 && styles.btnDisabled]}
-            disabled={selected.length === 0}
-            onPress={() => { startDungeon(dungeonId, selected); setSelected([]); }}
+            style={[styles.btn, validSelected.length === 0 && styles.btnDisabled]}
+            disabled={validSelected.length === 0}
+            onPress={() => { startDungeon(dungeonId, validSelected); setSelected([]); }}
           >
-            <Text style={styles.btnText}>Delve · power {powerOf(selected)}</Text>
+            <Text style={styles.btnText}>Delve · power {teamPower(state, validSelected)}</Text>
           </Pressable>
         </>
       )}
