@@ -7,6 +7,8 @@ export function ResourceBar() {
   return (
     <View style={styles.row}>
       <Text style={styles.item}>🪙 {r.gold}</Text>
+      <Text style={styles.item}>🪵 {r.wood}</Text>
+      <Text style={styles.item}>🌰 {r.acorns}</Text>
     </View>
   );
 }
