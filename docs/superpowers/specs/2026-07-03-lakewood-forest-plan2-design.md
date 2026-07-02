@@ -230,6 +230,24 @@ After Forest ships and `main` is green:
 
 ---
 
+## 8b. Deferred: Plan 2b — sprite art (decided 2026-07-03)
+
+Plan 2 ships on **emoji placeholders** (creature art comes from a single `SPECIES.emoji` field, so
+the swap is localized). A follow-on **Plan 2b** replaces them with an **original set of ~10
+Gen-4-style (Diamond & Pearl-esque) 64×64 pixel critters**.
+
+**Hard constraint — original art only.** No ripped Pokémon sprites or any Game Freak / TPC assets:
+the repo is public under a personal name with an MIT license, and TPC actively DMCAs fan projects.
+The *style* (soft chibi pixel front-sprites) is not protected; the specific creatures and ripped
+assets are. Plan 2b commissions/generates original critters in that style, matching the 10 species
+already named here (Fernling, Pebble Pup, Moss Mouse, Bark Bug, Hedgehush, Cedar Cat, Lumi Fox,
+Owlin, Stagheart, Ember Kit).
+
+**Integration (Plan 2b scope):** add a `sprite` field to `Species`, bundle the PNGs under
+`assets/creatures/`, and swap `<Text>{emoji}</Text>` → `<Image>` in three spots (CreatureRoster,
+DungeonCard team chips, DiscoveryToast). Emoji stay as the fallback. The discovery toast is the
+highest-value place for the real reveal.
+
 ## 9. Open questions for implementation planning
 
 - Exact starter roster (2 creatures) + the ~8 wild species: names, emoji, rarity/affinity spread.
