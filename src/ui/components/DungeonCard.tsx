@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { theme } from '../theme';
 import { cards } from '../styles';
@@ -27,11 +27,9 @@ export function DungeonCard({ dungeonId, now }: { dungeonId: string; now: number
   const toggle = (id: string) =>
     setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
 
-  // Only creatures still idle can delve — drop any that left the idle set (e.g. sent foraging).
+  // Only creatures still idle can delve — recomputed each render, so stale ids in `selected`
+  // (e.g. a creature just sent foraging) are always filtered out here. No effect needed.
   const validSelected = selected.filter((id) => idleCreatures.some((c) => c.id === id));
-  useEffect(() => {
-    setSelected((cur) => cur.filter((id) => idleCreatures.some((c) => c.id === id)));
-  }, [idleCreatures]);
 
   const run = dungeon.activeRun;
   const remaining = run ? Math.ceil((run.startedAt + def.durationSec * 1000 - now) / 1000) : 0;
