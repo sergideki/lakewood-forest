@@ -44,7 +44,7 @@ plant crops + assign villagers to the farm
 
 | System | v1 definition |
 |---|---|
-| **Resources** | 3 only: 🪙 Gold · 🪵 Wood · 🌰 Acorns (materials) |
+| **Resources** | 🪙 Gold now (Wood 🪵 + Acorns 🌰 land with the Forest in Plan 2 — dropped from code until they have a source) |
 | **Farm** | Grid of plots · ~6 crops on real-time growth · villagers auto-harvest into the **barn** |
 | **Villagers** | ~4 family members · assign to farm jobs · light levels (harvest speed / yield) |
 | **Creatures** | ~10 discoverable · light traits: **affinity** (forage vs dungeon) + **rarity** · light levels |
