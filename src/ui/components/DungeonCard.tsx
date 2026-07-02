@@ -17,11 +17,15 @@ function fmt(sec: number): string {
 
 export function DungeonCard({ dungeonId, now }: { dungeonId: string; now: number }) {
   const def = getDungeon(dungeonId)!;
-  const dungeon = useGameStore((s) => s.state.dungeons.find((d) => d.id === dungeonId)!);
-  const idleCreatures = useGameStore((s) => s.state.creatures.filter((c) => c.assignment.type === 'idle'));
   const state = useGameStore((s) => s.state);
   const startDungeon = useGameStore((s) => s.startDungeon);
   const collectDungeon = useGameStore((s) => s.collectDungeon);
+
+  // Derive from the already-subscribed `state`. NEVER return a freshly-built array/object
+  // from a useGameStore selector: zustand v5 (useSyncExternalStore) treats the new reference
+  // as a changed snapshot every render and infinite-loops ("getSnapshot should be cached").
+  const dungeon = state.dungeons.find((d) => d.id === dungeonId)!;
+  const idleCreatures = state.creatures.filter((c) => c.assignment.type === 'idle');
 
   const [selected, setSelected] = useState<string[]>([]);
   const toggle = (id: string) =>
