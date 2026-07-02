@@ -4,3 +4,4 @@ export * from './content';
 export * from './farm';
 export * from './idle';
 export * from './creatures';
+export * from './forest';
