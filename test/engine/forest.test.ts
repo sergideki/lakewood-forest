@@ -7,7 +7,11 @@ import {
   satchelCap,
   accrueSatchel,
   collectSatchel,
+  startRun,
+  isRunReady,
+  collectRun,
 } from '../../src/engine/forest';
+import { getDungeon } from '../../src/engine';
 
 function seqRng(values: number[]): () => number {
   let i = 0;
@@ -163,5 +167,73 @@ describe('collectSatchel', () => {
     expect(next.storage.satchel.wood).toBeCloseTo(0.4, 5);
     expect(next.storage.satchel.acorn).toBeCloseTo(0.9, 5);
     expect(next.discovered).toEqual(s.discovered);
+  });
+});
+
+const HOLLOW = 'hollow';
+const HOLLOW_MS = 15 * 60 * 1000;
+
+describe('startRun', () => {
+  it('marks creatures busy and opens the run', () => {
+    const s = startRun(createInitialState(0), HOLLOW, ['cr-fernling'], 1000);
+    expect(s.dungeons.find((d) => d.id === HOLLOW)!.activeRun).toEqual({ creatureIds: ['cr-fernling'], startedAt: 1000 });
+    expect(s.creatures.find((c) => c.id === 'cr-fernling')!.assignment).toEqual({ type: 'dungeon', dungeonId: HOLLOW, startedAt: 1000 });
+  });
+
+  it('is a no-op with an empty team, a busy creature, or an already-running dungeon', () => {
+    const s0 = createInitialState(0);
+    expect(startRun(s0, HOLLOW, [], 1000).dungeons.find((d) => d.id === HOLLOW)!.activeRun).toBeNull();
+    const running = startRun(s0, HOLLOW, ['cr-fernling'], 1000);
+    // pebblepup is free, but hollow already runs => no-op
+    expect(startRun(running, HOLLOW, ['cr-pebblepup'], 2000).dungeons.find((d) => d.id === HOLLOW)!.activeRun!.creatureIds).toEqual(['cr-fernling']);
+    // fernling is busy => starting grove with it is a no-op
+    expect(startRun(running, 'grove', ['cr-fernling'], 2000).dungeons.find((d) => d.id === 'grove')!.activeRun).toBeNull();
+  });
+});
+
+describe('isRunReady', () => {
+  it('is false before the duration elapses, true after', () => {
+    const s = startRun(createInitialState(0), HOLLOW, ['cr-fernling'], 1000);
+    expect(isRunReady(s, HOLLOW, 1000 + HOLLOW_MS - 1)).toBe(false);
+    expect(isRunReady(s, HOLLOW, 1000 + HOLLOW_MS)).toBe(true);
+  });
+
+  it('is false when no run is active', () => {
+    expect(isRunReady(createInitialState(0), HOLLOW, 9_999_999)).toBe(false);
+  });
+});
+
+describe('collectRun', () => {
+  it('is a no-op before the run is ready', () => {
+    const s = startRun(createInitialState(0), HOLLOW, ['cr-fernling'], 1000);
+    const next = collectRun(s, HOLLOW, () => 0.99, 1000 + HOLLOW_MS - 1);
+    expect(next).toBe(s); // unchanged reference
+  });
+
+  it('pays power-scaled loot, grants xp, frees creatures, clears the run (discovery miss)', () => {
+    const d = getDungeon(HOLLOW)!; // recommendedPower 2, loot gold20/wood10/acorn6, xp30
+    const s = startRun(createInitialState(0), HOLLOW, ['cr-fernling', 'cr-pebblepup'], 1000); // teamPower 2 => mult 1.0
+    const next = collectRun(s, HOLLOW, () => 0.99, 1000 + HOLLOW_MS);
+    expect(next.resources.gold).toBe(d.loot.gold);
+    expect(next.resources.wood).toBe(d.loot.wood);
+    expect(next.resources.acorns).toBe(d.loot.acorn);
+    expect(next.dungeons.find((x) => x.id === HOLLOW)!.activeRun).toBeNull();
+    const fern = next.creatures.find((c) => c.id === 'cr-fernling')!;
+    expect(fern.assignment.type).toBe('idle');
+    expect(fern.xp + (fern.level - 1) * 100).toBeGreaterThanOrEqual(30); // got at least the xp lump
+  });
+
+  it('clamps loot multiplier to a 0.5 floor for an underpowered team', () => {
+    const s = startRun(createInitialState(0), 'deep', ['cr-fernling'], 1000); // power 1 vs recommended 14
+    const deep = getDungeon('deep')!;
+    const next = collectRun(s, 'deep', () => 0.99, 1000 + deep.durationSec * 1000);
+    expect(next.resources.gold).toBe(Math.floor(deep.loot.gold * 0.5));
+  });
+
+  it('can discover on completion when the roll hits', () => {
+    const s = startRun(createInitialState(0), HOLLOW, ['cr-fernling'], 1000);
+    const before = s.discovered.length;
+    const next = collectRun(s, HOLLOW, seqRng([0.0, 0.0]), 1000 + HOLLOW_MS);
+    expect(next.discovered.length).toBe(before + 1);
   });
 });

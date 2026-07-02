@@ -1,5 +1,6 @@
 import type { GameState, Material, Rng } from './types';
-import { creatureForageOutput, rollDiscovery } from './creatures';
+import { creatureForageOutput, rollDiscovery, teamPower, grantXp } from './creatures';
+import { getDungeon } from './content';
 
 export const SATCHEL_HOURS = 24;
 export const SATCHEL_FLOOR = 200;
@@ -69,4 +70,63 @@ export function assignCreature(state: GameState, creatureId: string, to: 'idle' 
       return { ...c, assignment: { type: to, dungeonId: null, startedAt: 0 } };
     }),
   };
+}
+
+/** Begin a run: no-op unless the dungeon is idle, the team is non-empty, and all are free. */
+export function startRun(state: GameState, dungeonId: string, creatureIds: string[], now: number): GameState {
+  const dungeon = state.dungeons.find((d) => d.id === dungeonId);
+  if (!dungeon || dungeon.activeRun) return state;
+  if (creatureIds.length === 0) return state;
+  const team = state.creatures.filter((c) => creatureIds.includes(c.id));
+  if (team.length !== creatureIds.length) return state;               // unknown id
+  if (team.some((c) => c.assignment.type === 'dungeon')) return state; // busy elsewhere
+
+  return {
+    ...state,
+    creatures: state.creatures.map((c) =>
+      creatureIds.includes(c.id)
+        ? { ...c, assignment: { type: 'dungeon', dungeonId, startedAt: now } }
+        : c,
+    ),
+    dungeons: state.dungeons.map((d) =>
+      d.id === dungeonId ? { ...d, activeRun: { creatureIds, startedAt: now } } : d,
+    ),
+  };
+}
+
+export function isRunReady(state: GameState, dungeonId: string, now: number): boolean {
+  const dungeon = state.dungeons.find((d) => d.id === dungeonId);
+  const def = getDungeon(dungeonId);
+  if (!dungeon || !dungeon.activeRun || !def) return false;
+  return now >= dungeon.activeRun.startedAt + def.durationSec * 1000;
+}
+
+/**
+ * Collect a ready run: pay loot * clamp(teamPower/recommendedPower, 0.5, 1.5), roll discovery at
+ * baseChance * mult, grant each creature the xp lump, free them, clear the run. No-op if not ready.
+ */
+export function collectRun(state: GameState, dungeonId: string, rng: Rng, now: number): GameState {
+  if (!isRunReady(state, dungeonId, now)) return state;
+  const def = getDungeon(dungeonId)!;
+  const run = state.dungeons.find((d) => d.id === dungeonId)!.activeRun!;
+  const power = teamPower(state, run.creatureIds);
+  const mult = Math.max(0.5, Math.min(1.5, power / def.recommendedPower));
+
+  const paid: GameState = {
+    ...state,
+    resources: {
+      ...state.resources,
+      gold: state.resources.gold + Math.floor(def.loot.gold * mult),
+      wood: state.resources.wood + Math.floor(def.loot.wood * mult),
+      acorns: state.resources.acorns + Math.floor(def.loot.acorn * mult),
+    },
+    creatures: state.creatures.map((c) =>
+      run.creatureIds.includes(c.id)
+        ? grantXp({ ...c, assignment: { type: 'idle', dungeonId: null, startedAt: 0 } }, def.xpReward)
+        : c,
+    ),
+    dungeons: state.dungeons.map((d) => (d.id === dungeonId ? { ...d, activeRun: null } : d)),
+  };
+
+  return rollDiscovery(paid, Math.min(0.95, def.baseDiscoveryChance * mult), rng);
 }
