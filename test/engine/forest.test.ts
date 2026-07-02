@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { SPECIES, DUNGEONS } from '../../src/engine';
+import { createInitialState } from '../../src/engine';
 
 describe('content tables', () => {
   it('has ~10 species, each with rarity + wood|acorn affinity', () => {
@@ -30,5 +31,20 @@ describe('content tables', () => {
       expect(d.baseDiscoveryChance).toBeGreaterThan(0);
       expect(d.xpReward).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('createInitialState (forest fields)', () => {
+  it('starts with two idle starter creatures, empty satchel, 3 idle dungeons, both starters discovered', () => {
+    const s = createInitialState(1000);
+    expect(s.resources.wood).toBe(0);
+    expect(s.resources.acorns).toBe(0);
+    expect(s.storage.satchel).toEqual({ wood: 0, acorn: 0 });
+    expect(s.creatures).toHaveLength(2);
+    expect(s.creatures.map((c) => c.species).sort()).toEqual(['fernling', 'pebblepup']);
+    expect(s.creatures.every((c) => c.assignment.type === 'idle' && c.level === 1 && c.xp === 0)).toBe(true);
+    expect(s.dungeons.map((d) => d.id)).toEqual(['hollow', 'grove', 'deep']);
+    expect(s.dungeons.every((d) => d.activeRun === null)).toBe(true);
+    expect(s.discovered.sort()).toEqual(['fernling', 'pebblepup']);
   });
 });
