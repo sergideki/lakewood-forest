@@ -5,3 +5,4 @@ dist/
 .superpowers/
 .DS_Store
 .gstack/
+.claude/settings.json
