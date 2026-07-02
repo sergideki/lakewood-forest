@@ -19,4 +19,10 @@ describe('serialize / deserialize', () => {
     expect(restored.plots).toHaveLength(3);
     expect(restored.storage.barn.amount).toBe(0);
   });
+
+  it('returns a fresh state when the envelope is valid JSON but the state shape is wrong', () => {
+    const restored = deserialize('{"version":1,"state":{}}');
+    expect(restored.plots).toHaveLength(3);
+    expect(restored.storage.barn.amount).toBe(0);
+  });
 });

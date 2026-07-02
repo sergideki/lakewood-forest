@@ -8,6 +8,9 @@ import { accrueBarn } from './farm';
 export function applyElapsed(state: GameState, now: number): GameState {
   const elapsedSec = Math.max(0, (now - state.meta.lastSeen) / 1000);
   let next = accrueBarn(state, elapsedSec);
-  next = { ...next, meta: { ...next.meta, lastSeen: now } };
+  // Never let lastSeen move backward: a clock rollback (DST/NTP shift, manual clock
+  // change) must not create a huge forward gap on the next call — a repeatable dupe.
+  const lastSeen = Math.max(now, state.meta.lastSeen);
+  next = { ...next, meta: { ...next.meta, lastSeen } };
   return next;
 }

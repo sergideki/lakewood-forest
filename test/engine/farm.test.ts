@@ -55,6 +55,13 @@ describe('plantCrop / assignVillager', () => {
     s = assignVillager(s, 'vil-1', null);
     expect(s.villagers.find((v) => v.id === 'vil-1')!.assignedTo).toBeNull();
   });
+
+  it('assignVillager is immutable — leaves the input untouched', () => {
+    const s0 = createInitialState(0);
+    const s1 = assignVillager(s0, 'vil-1', 'farm');
+    expect(s0.villagers.find((v) => v.id === 'vil-1')!.assignedTo).toBeNull();
+    expect(s1).not.toBe(s0);
+  });
 });
 
 import { accrueBarn, collectBarn } from '../../src/engine';
@@ -83,6 +90,16 @@ describe('accrueBarn', () => {
     expect(accrueBarn(s, 0).storage.barn.amount).toBe(0);
     expect(accrueBarn(s, -50).storage.barn.amount).toBe(0);
   });
+
+  it('is immutable — leaves the input barn untouched', () => {
+    let s = createInitialState(0);
+    s = plantCrop(s, 'plot-1', 'wheat');
+    s = assignVillager(s, 'vil-1', 'farm');
+    const result = accrueBarn(s, 200);
+    expect(s.storage.barn.amount).toBe(0); // input untouched
+    expect(result).not.toBe(s);
+    expect(result.storage.barn.amount).toBeCloseTo(10, 5);
+  });
 });
 
 describe('collectBarn', () => {
@@ -92,5 +109,13 @@ describe('collectBarn', () => {
     s = collectBarn(s);
     expect(s.resources.gold).toBe(42);
     expect(s.storage.barn.amount).toBe(0);
+  });
+
+  it('banks the whole-gold part and carries the fractional remainder in the barn', () => {
+    let s = createInitialState(0);
+    s.storage.barn.amount = 42.7;
+    s = collectBarn(s);
+    expect(s.resources.gold).toBe(42);
+    expect(s.storage.barn.amount).toBeCloseTo(0.7, 5); // remainder kept, not discarded
   });
 });

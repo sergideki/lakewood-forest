@@ -44,12 +44,13 @@ export function accrueBarn(state: GameState, elapsedSec: number): GameState {
   return { ...state, storage: { ...state.storage, barn: { ...state.storage.barn, amount } } };
 }
 
-/** Bank the barn's contents into gold and empty it. */
+/** Bank the whole-gold part of the barn into gold; carry the fractional remainder. */
 export function collectBarn(state: GameState): GameState {
   const banked = Math.floor(state.storage.barn.amount);
+  const remainder = state.storage.barn.amount - banked;
   return {
     ...state,
     resources: { ...state.resources, gold: state.resources.gold + banked },
-    storage: { ...state.storage, barn: { ...state.storage.barn, amount: 0 } },
+    storage: { ...state.storage, barn: { ...state.storage.barn, amount: remainder } },
   };
 }
