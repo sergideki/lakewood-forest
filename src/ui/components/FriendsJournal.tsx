@@ -7,13 +7,14 @@ import { SPECIES } from '../../engine';
 import { CreatureIcon } from './CreatureIcon';
 
 const AFFINITY_EMOJI = { wood: '🪵', acorn: '🌰' } as const;
+const ALL_SPECIES = Object.values(SPECIES); // static catalog — build once at module load
 
 export function FriendsJournal() {
   // Subscribe to the STABLE slice only. zustand v5 (useSyncExternalStore) crashes
   // on mount ("getSnapshot should be cached") if a selector returns a freshly
   // built array/object — so never .filter/.map inside the selector.
   const discovered = useGameStore((s) => s.state.discovered);
-  const species = Object.values(SPECIES);
+  const species = ALL_SPECIES;
 
   return (
     <View>
