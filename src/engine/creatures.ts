@@ -64,7 +64,9 @@ export const FORAGE_XP_PER_SEC = 0.02;
  */
 export function rollDiscovery(state: GameState, chance: number, rng: Rng): GameState {
   if (rng() >= chance) return state;
-  const pool = Object.values(SPECIES).filter((sp) => !state.discovered.includes(sp.id));
+  const pool = Object.values(SPECIES).filter(
+    (sp) => !state.discovered.includes(sp.id) && sp.affinity !== 'fish',
+  );
   if (pool.length === 0) return state;
 
   const totalWeight = pool.reduce((sum, sp) => sum + DISCOVERY_WEIGHT[sp.rarity], 0);

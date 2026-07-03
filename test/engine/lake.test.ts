@@ -13,6 +13,7 @@ import {
   buildHabitat,
   collectHabitat,
 } from '../../src/engine/lake';
+import { rollDiscovery } from '../../src/engine/creatures';
 import type { GameState } from '../../src/engine/types';
 
 // A state with one discovered fish-affinity creature set to forage (fills the creel).
@@ -178,6 +179,16 @@ describe('habitat content integrity', () => {
       expect(SPECIES[h.attracts]).toBeTruthy();
       expect(SPECIES[h.attracts].affinity).toBe('fish');
     }
+  });
+});
+
+describe('rollDiscovery excludes water creatures (directed-only)', () => {
+  it('never randomly discovers a fish-affinity species, even when only water species remain', () => {
+    const land = Object.values(SPECIES).filter((sp) => sp.affinity !== 'fish').map((sp) => sp.id);
+    const s = { ...createInitialState(0), discovered: land };
+    const after = rollDiscovery(s, 1, () => 0); // chance 1; land-only pool must be empty → no-op
+    expect(after).toBe(s);
+    expect(after.discovered.some((id) => SPECIES[id].affinity === 'fish')).toBe(false);
   });
 });
 
