@@ -1,6 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, plantCrop, SPECIES, HABITATS } from '../../src/engine';
-import { serialize, deserialize, SAVE_VERSION } from '../../src/persistence/save';
+import { serialize, deserialize, tryDeserialize, SAVE_VERSION } from '../../src/persistence/save';
+
+describe('tryDeserialize (strict import)', () => {
+  it('round-trips a real backup and migrates it', () => {
+    const s = { ...createInitialState(0), resources: { gold: 7, wood: 0, acorns: 0, fish: 3 } };
+    const restored = tryDeserialize(serialize(s));
+    expect(restored?.resources.gold).toBe(7);
+    expect(restored?.resources.fish).toBe(3);
+  });
+  it('returns null (never a fresh state) for junk, so a bad import cannot wipe the save', () => {
+    expect(tryDeserialize('not json')).toBeNull();
+    expect(tryDeserialize('{}')).toBeNull();
+    expect(tryDeserialize(JSON.stringify({ version: 4 }))).toBeNull(); // no state
+    expect(tryDeserialize(JSON.stringify({ version: 4, state: { nope: true } }))).toBeNull(); // fails base validation
+  });
+});
 
 describe('serialize / deserialize', () => {
   it('round-trips a game state', () => {

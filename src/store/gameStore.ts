@@ -17,7 +17,7 @@ import {
   buildHabitat,
   collectHabitat,
 } from '../engine';
-import { serialize, deserialize } from '../persistence/save';
+import { serialize, deserialize, tryDeserialize } from '../persistence/save';
 
 const STORAGE_KEY = 'lakewood.save.v1'; // key unchanged; the envelope's `version` drives migration
 
@@ -43,6 +43,8 @@ interface GameStore {
   dismissCatch: () => void;
   dismissDiscovery: () => void;
   save: () => void;
+  exportState: () => string;
+  importState: (json: string) => boolean;
 }
 
 function persist(state: GameState) {
@@ -145,5 +147,20 @@ export const useGameStore = create<GameStore>((set, get) => {
     dismissDiscovery: () => set({ lastDiscovery: null }),
 
     save: () => { if (get().loaded) persist(get().state); },
+
+    // Backup: the current save envelope as a JSON string (for the Settings export box).
+    exportState: () => serialize(get().state),
+
+    // Restore: replace the live state from a pasted export blob. Rejects invalid JSON WITHOUT
+    // touching the current save (tryDeserialize returns null rather than a fresh state), so a bad
+    // paste can't wipe progress. Runs applyElapsed so offline gains since the blob was made apply.
+    importState: (json) => {
+      const restored = tryDeserialize(json);
+      if (!restored) return false;
+      const next = applyElapsed(restored, Date.now());
+      persist(next);
+      set({ state: next, loaded: true });
+      return true;
+    },
   };
 });

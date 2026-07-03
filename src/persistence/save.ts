@@ -31,6 +31,22 @@ export function deserialize(json: string | null): GameState {
   }
 }
 
+/**
+ * Strict parse for user-supplied import blobs: returns a migrated GameState, or null when the
+ * input is not a real save (bad JSON, missing envelope, failed base validation). Unlike
+ * deserialize, it never falls back to a fresh state — so a failed Import leaves the save untouched.
+ */
+export function tryDeserialize(json: string): GameState | null {
+  try {
+    const parsed = JSON.parse(json) as Partial<SaveEnvelope>;
+    if (!parsed || typeof parsed.version !== 'number' || !parsed.state) return null;
+    if (!isValidBaseState(parsed.state)) return null;
+    return migrate(parsed.version, parsed.state);
+  } catch {
+    return null;
+  }
+}
+
 /** Validates the fields common to every version. Forest fields are backfilled by migrate(). */
 function isValidBaseState(state: unknown): state is GameState {
   if (!state || typeof state !== 'object') return false;
