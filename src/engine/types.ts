@@ -87,6 +87,18 @@ export interface Meta {
   lastSeen: number; // epoch ms
 }
 
+export type UpgradeId = string;
+
+export interface TownUpgrade {
+  id: UpgradeId;
+  name: string;
+  emoji: string;
+  description: string;          // one line, shown in the shop
+  maxLevel: number;
+  baseCost: Partial<Resources>; // cost of level 0 -> 1; absent component = 0
+  costGrowth: number;           // per-level multiplier on every cost component
+}
+
 export interface GameState {
   resources: Resources;
   plots: Plot[];
@@ -95,5 +107,6 @@ export interface GameState {
   storage: Storage;
   dungeons: DungeonState[];
   discovered: SpeciesId[];
+  upgrades: Record<UpgradeId, number>; // upgrade id -> owned level; absent key = 0
   meta: Meta;
 }
