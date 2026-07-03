@@ -6,3 +6,4 @@ export * from './idle';
 export * from './creatures';
 export * from './forest';
 export * from './town';
+export * from './lake';

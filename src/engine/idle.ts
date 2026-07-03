@@ -2,6 +2,7 @@ import type { GameState } from './types';
 import { accrueBarn } from './farm';
 import { accrueSatchel } from './forest';
 import { dripForagerXp } from './creatures';
+import { accrueCreel } from './lake';
 
 /**
  * Apply all offline progress between state.meta.lastSeen and `now` (epoch ms).
@@ -13,6 +14,7 @@ export function applyElapsed(state: GameState, now: number): GameState {
   const elapsedSec = Math.max(0, (now - state.meta.lastSeen) / 1000);
   let next = accrueBarn(state, elapsedSec);
   next = accrueSatchel(next, elapsedSec);
+  next = accrueCreel(next, elapsedSec);
   next = dripForagerXp(next, elapsedSec);
   // Never let lastSeen move backward: a clock rollback (DST/NTP shift, manual clock
   // change) must not create a huge forward gap on the next call — a repeatable dupe.
