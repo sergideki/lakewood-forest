@@ -90,7 +90,7 @@ echo "==> zipalign + sign"
 "$ZIPALIGN" -f -p 4 "$RAW" "$ALIGNED"
 STORE_PW="$storePassword" KEY_PW="$keyPassword" "$APKSIGNER" sign \
   --ks "$KS_PATH" --ks-key-alias "$keyAlias" \
-  --ks-pass "pass:env:STORE_PW" --key-pass "pass:env:KEY_PW" \
+  --ks-pass "env:STORE_PW" --key-pass "env:KEY_PW" \
   --out "$OUT" "$ALIGNED"
 rm -f "$ALIGNED"
 "$APKSIGNER" verify --print-certs "$OUT" >/dev/null && echo "==> signed OK: $OUT"
