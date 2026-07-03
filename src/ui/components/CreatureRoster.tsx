@@ -4,6 +4,7 @@ import { cards } from '../styles';
 import { useGameStore } from '../../store/gameStore';
 import { getDungeon } from '../../engine';
 import type { Rarity } from '../../engine/types';
+import { CreatureIcon } from './CreatureIcon';
 
 const RARITY_COLOR: Record<Rarity, string> = {
   common: '#9fb6a4',
@@ -31,7 +32,7 @@ export function CreatureRoster() {
             disabled={inDungeon}
             onPress={() => assignTo(c.id, foraging ? 'idle' : 'forage')}
           >
-            <Text style={styles.emoji}>{c.emoji}</Text>
+            <CreatureIcon speciesId={c.species} emoji={c.emoji} size={24} />
             <View style={styles.meta}>
               <Text style={styles.name}>
                 {c.name} <Text style={[styles.rarity, { color: RARITY_COLOR[c.rarity] }]}>• {c.rarity}</Text>
@@ -50,7 +51,6 @@ const styles = StyleSheet.create({
     borderRadius: 10, backgroundColor: '#26332a', marginBottom: 6, borderWidth: 1, borderColor: 'transparent' },
   rowItemOn: { borderColor: theme.accent, backgroundColor: '#2e4535' },
   rowItemLocked: { opacity: 0.55 },
-  emoji: { fontSize: 24 },
   meta: { flex: 1 },
   name: { color: theme.text, fontSize: 14, fontWeight: '600' },
   rarity: { fontSize: 11, fontWeight: '600' },
