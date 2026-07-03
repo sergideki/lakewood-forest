@@ -126,11 +126,21 @@ export interface GameState {
 }
 ```
 
-> **tsc is the safety net for the `fish` ripple.** Making `Resources.fish` required means every
-> Resources *object literal* that isn't a spread must add `fish`, or compilation fails. Known sites
-> to update: `createInitialState`, `town.upgradeCost` return, `town.purchaseUpgrade` resources
-> literal (it rebuilds gold/wood/acorns by hand and would otherwise DROP fish), and the test
-> `rich()` helper. Spread-based updates (`{ ...state.resources, … }`) preserve fish automatically.
+> **tsc is the safety net for the `fish`/`creel` ripple.** Making `Resources.fish` and
+> `Storage.creel` required means every `Resources`/`Storage` *object literal* that isn't a spread
+> must add the new field, or compilation fails. **Complete site inventory (verified against code by
+> the doubt-driven skeptic):**
+> - `state.ts` `createInitialState` — resources literal (line 7) + storage literal (line 19).
+> - `town.ts` `upgradeCost` return (lines 15–19) — add `fish: Math.ceil((def.baseCost.fish ?? 0) * mult)` (always 0 for current upgrades).
+> - `town.ts` `purchaseUpgrade` resources literal (lines 37–42) — rebuilds gold/wood/acorns by hand; add `fish: state.resources.fish - cost.fish`.
+> - **`save.ts` `addForestFields` (lines 60–61) — THE genuinely non-obvious site: it rebuilds
+>   `resources` AND `storage` by hand in the v1→v2 step, so it won't compile until it also emits
+>   `fish: r.fish ?? 0` and `creel: old.storage.creel ?? { fish: 0 }`.** (`addLakeFields` backfills
+>   old saves at runtime, but `addForestFields` must still type-check.)
+> - `test/engine/town.test.ts` `rich()` helper (line 21) + the `broke` literal (line 117) — both full `Resources` literals, add `fish`.
+>
+> Spread-based updates (`{ ...state.resources, … }` in `collectRun`, `collectBarn`, `collectSatchel`,
+> `buyTreat`) preserve `fish` automatically — no edit needed.
 
 ### 3.2 Content (`src/engine/content.ts`)
 
@@ -316,6 +326,9 @@ not regress the Plan 4 hydration fix):
 Registered as the 5th tab in `app/_layout.tsx` (`🎣 Lake`, after Town). Same shell as Forest: a 1 s
 tick loop + AppState foreground catch-up (drives live creel fill + habitat countdowns), ResourceBar,
 ScrollView of cards, and the catch toast. Order: `CreelCard` → water-creature roster → habitat cards.
+**Mount BOTH `<DiscoveryToast />` and `<CatchToast />`**: `collectHabitat` fires `lastDiscovery`
+(the attracted-creature reveal), which `DiscoveryToast` renders; `collectFish` fires `lastCatch`,
+which `CatchToast` renders. Without `DiscoveryToast` on this screen the habitat reveal never shows.
 
 ### 6.2 Components
 
@@ -338,6 +351,10 @@ ScrollView of cards, and the catch toast. Order: `CreelCard` → water-creature 
 ### 6.3 Edits to existing components
 
 - **`ResourceBar`**: append `🐟 {r.fish}`.
+- **`DiscoveryToast`**: line 21 hardcodes the forage glyph as `wood ? 🪵 : 🌰`, so a discovered water
+  creature (habitat reveal fires this toast via `lastDiscovery`) would render "forages 🌰". Map the
+  glyph via `{ wood:'🪵', acorn:'🌰', fish:'🐟' }[sp.affinity]` and word it "fishes 🐟" for water
+  creatures (or keep "forages" generically).
 - **`CreatureRoster`**: today it renders ALL creatures and hardcodes the forage glyph as
   `wood ? 🪵 : 🌰` — which would mislabel a fish forager. Add a `filter` prop (default: land only,
   `c.affinity !== 'fish'`) so Forest shows land creatures and Lake shows water creatures, and map the
@@ -399,19 +416,33 @@ component tests exist — the zustand mount crash class is only catchable live).
 - `rollDiscovery` (add to `creatures.test.ts` or lake): never returns a fish-affinity species even
   when only water species remain undiscovered.
 
-**`test/persistence/save.test.ts`:** bump the sanctioned `SAVE_VERSION` assertion to 4; add a v3→v4
-backfill test and a v1→v4 full-chain test (satchel AND upgrades AND creel/habitats/pets all present);
-confirm a current save round-trips fish/creel/habitats/pets.
+**`test/persistence/save.test.ts`:** bump the sanctioned `SAVE_VERSION` assertion (line 57) to 4; add
+a v3→v4 backfill test and a v1→v4 full-chain test (satchel AND upgrades AND creel/habitats/pets all
+present); confirm a current save round-trips fish/creel/habitats/pets. (No `fish`-shape `toEqual` in
+this file, so nothing else here moves.)
 
-Green bar target: existing **80** + the new lake suite, `tsc --noEmit` clean.
+**Sanctioned edits to `test/engine/town.test.ts` (the `fish` field forces these — NOT optional):**
+adding `fish` to `Resources` changes `upgradeCost`/`purchaseUpgrade` output shape, so the exact
+`toEqual` assertions must gain `fish`:
+- line 43 → `expect(c0).toEqual({ gold: 40, wood: 25, acorns: 0, fish: 0 })`
+- line 44 → append `fish: 0` to the `c1` expectation
+- line 58 → append `fish: 10_000` (unchanged by an upgrade) to the `s1.resources` expectation
+- line 117 → the `broke` resources literal gains `fish: 0` (tsc requirement)
+
+Green bar target: existing **80** tests still pass **after** the sanctioned `town.test.ts` (4) +
+`save.test.ts` (1) assertion edits above, **plus** the new lake suite, `tsc --noEmit` clean.
+(Correction over an earlier draft: the "only the SAVE_VERSION assertion changes" claim was wrong —
+the `fish` field also touches four `town.test.ts` shape assertions.)
 
 ---
 
 ## 9. Risks & mitigations
 
-- **Dropped `fish` on a hand-built Resources literal** → tsc fails (required field). The one
-  non-obvious site is `purchaseUpgrade` (rebuilds resources without a spread) — call it out in the
-  plan. Mitigation: tsc + a save round-trip test asserting fish survives a purchase.
+- **Dropped `fish`/`creel` on a hand-built literal** → tsc fails (required field). The genuinely
+  non-obvious site is **`save.ts` `addForestFields`** (rebuilds both `resources` and `storage` in the
+  v1→v2 migration step); `purchaseUpgrade` and `upgradeCost` are the other by-hand rebuilds. Full
+  inventory in §3.1. Mitigation: tsc (catches every one) + a save round-trip test asserting fish
+  survives a purchase and a full v1→v4 chain.
 - **Water creatures leaking into forest random rolls** → the §4.5 filter; a dedicated test asserts
   it.
 - **Empty-creel pet farming** → `collectCreel` gates the catch roll on `bankFish > 0`.
