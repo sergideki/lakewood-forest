@@ -1,8 +1,8 @@
 import type { GameState } from '../engine/types';
 import { createInitialState, makeCreature } from '../engine';
-import { DUNGEONS, STARTER_SPECIES } from '../engine/content';
+import { DUNGEONS, STARTER_SPECIES, HABITATS } from '../engine/content';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 interface SaveEnvelope {
   version: number;
@@ -45,11 +45,12 @@ function isValidBaseState(state: unknown): state is GameState {
   return true;
 }
 
-/** Additive migrations. v1 (farm-only) -> v2 (forest) -> v3 (town upgrades). Idempotent. */
+/** Additive migrations. v1 (farm) -> v2 (forest) -> v3 (town) -> v4 (lake). Idempotent. */
 function migrate(fromVersion: number, state: GameState): GameState {
   let s = state;
   if (fromVersion < 2) s = addForestFields(s);
   if (fromVersion < 3) s = { ...s, upgrades: s.upgrades ?? {} };
+  if (fromVersion < 4) s = addLakeFields(s);
   return s;
 }
 
@@ -66,5 +67,15 @@ function addForestFields(old: GameState): GameState {
     creatures: old.creatures ?? STARTER_SPECIES.map(makeCreature),
     dungeons: old.dungeons ?? DUNGEONS.map((d) => ({ id: d.id, activeRun: null })),
     discovered: old.discovered ?? [...STARTER_SPECIES],
+  };
+}
+
+function addLakeFields(old: GameState): GameState {
+  return {
+    ...old,
+    resources: { ...old.resources, fish: old.resources.fish ?? 0 },
+    storage: { ...old.storage, creel: old.storage.creel ?? { fish: 0 } },
+    habitats: old.habitats ?? HABITATS.map((h) => ({ id: h.id, builtAt: null })),
+    pets: old.pets ?? [],
   };
 }

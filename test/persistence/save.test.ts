@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialState, plantCrop, SPECIES } from '../../src/engine';
+import { createInitialState, plantCrop, SPECIES, HABITATS } from '../../src/engine';
 import { serialize, deserialize, SAVE_VERSION } from '../../src/persistence/save';
 
 describe('serialize / deserialize', () => {
@@ -54,7 +54,7 @@ describe('v1 -> v2 migration', () => {
   it('leaves a current save untouched', () => {
     const v2 = serialize(plantCrop(createInitialState(1), 'plot-1', 'berry'));
     expect(JSON.parse(v2).version).toBe(SAVE_VERSION);
-    expect(SAVE_VERSION).toBe(3);
+    expect(SAVE_VERSION).toBe(4);
     const restored = deserialize(v2);
     expect(restored.creatures).toHaveLength(2);
     expect(Object.keys(SPECIES).length).toBeGreaterThanOrEqual(10);
@@ -88,5 +88,55 @@ describe('v2 -> v3 migration', () => {
   it('preserves owned upgrade levels on a current save', () => {
     const s0 = { ...createInitialState(0), upgrades: { 'barn-silo': 2 } };
     expect(deserialize(serialize(s0)).upgrades).toEqual({ 'barn-silo': 2 });
+  });
+});
+
+describe('v3 -> v4 migration', () => {
+  it('backfills fish, creel, habitats, pets on a v3 (pre-lake) save', () => {
+    const base = createInitialState(0) as unknown as Record<string, unknown>;
+    const v3State = {
+      ...base,
+      resources: { gold: 1, wood: 2, acorns: 3 },                          // no fish
+      storage: { barn: { amount: 0 }, satchel: { wood: 0, acorn: 0 } },    // no creel
+    } as Record<string, unknown>;
+    delete v3State.habitats;
+    delete v3State.pets;
+    const restored = deserialize(JSON.stringify({ version: 3, state: v3State }));
+    expect(restored.resources.fish).toBe(0);
+    expect(restored.storage.creel).toEqual({ fish: 0 });
+    expect(restored.habitats.length).toBe(HABITATS.length);
+    expect(restored.habitats.every((h) => h.builtAt === null)).toBe(true);
+    expect(restored.pets).toEqual([]);
+  });
+
+  it('chains v1 -> v4: forest, upgrades, AND lake fields all present', () => {
+    const v1Envelope = JSON.stringify({
+      version: 1,
+      state: {
+        resources: { gold: 5 },
+        plots: [{ id: 'plot-1', crop: null }],
+        villagers: [],
+        storage: { barn: { amount: 0 } },
+        meta: { lastSeen: 0 },
+      },
+    });
+    const s = deserialize(v1Envelope);
+    expect(s.storage.satchel).toEqual({ wood: 0, acorn: 0 }); // v2
+    expect(s.upgrades).toEqual({});                            // v3
+    expect(s.resources.fish).toBe(0);                          // v4
+    expect(s.storage.creel).toEqual({ fish: 0 });             // v4
+    expect(s.habitats.length).toBe(HABITATS.length);           // v4
+    expect(s.pets).toEqual([]);                                // v4
+  });
+
+  it('preserves lake state on a current save (round-trip)', () => {
+    const s0 = {
+      ...createInitialState(0),
+      resources: { gold: 0, wood: 0, acorns: 0, fish: 42 },
+      pets: ['pondsnail'],
+    };
+    const round = deserialize(serialize(s0));
+    expect(round.resources.fish).toBe(42);
+    expect(round.pets).toEqual(['pondsnail']);
   });
 });
