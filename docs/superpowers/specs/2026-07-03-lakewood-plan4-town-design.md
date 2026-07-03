@@ -84,7 +84,9 @@ Pure functions, same style as `farm.ts`/`forest.ts`:
 - `purchaseUpgrade(state, id): GameState` — no-op (returns `state` unchanged) when: unknown id,
   at max level, or can't afford. Otherwise deducts the cost, increments the level, and — for
   `farm-plot` only — appends `{ id: 'plot-4'|'plot-5'|'plot-6', crop: null }` (id derived from new
-  plot count, always unique because plots are only ever appended).
+  plot count, always unique because plots are only ever appended). Deduction must iterate the
+  cost's own entries (`(cost.gold ?? 0)` etc.) — `baseCost` is `Partial<Resources>`, so direct
+  subtraction of an absent component would produce `NaN`.
 - `buyTreat(state, creatureId): GameState` — no-op when acorns < `TREAT_COST_ACORNS` or unknown
   creature; otherwise deducts acorns and `grantXp(c, TREAT_XP)` (existing auto-level handles
   thresholds). Works on any creature regardless of assignment — a treat is instant, not a job.
@@ -95,9 +97,12 @@ Pure functions, same style as `farm.ts`/`forest.ts`:
 
 ### Touches to existing engine modules (minimal)
 
-- `farm.ts` `barnCap`: `Math.max(500, Math.round(perDay)) × barnCapMult(state)` → rounded. The
-  multiplier applies **after** the floor so the upgrade is visible even at zero production.
-- `forest.ts` `satchelCap`: same shape with `satchelCapMult`.
+- `farm.ts` `barnCap`: `Math.round(Math.max(500, Math.round(perDay)) × barnCapMult(state))`. The
+  multiplier applies **after** the floor so the upgrade is visible even at zero production, and the
+  **final** value is rounded — floor×mult and rate×mult both produce fractional caps otherwise
+  (e.g. odd cap × 1.5), and `BarnCard` renders the cap as an integer.
+- `forest.ts` `satchelCap`: same shape with `satchelCapMult` — `Math.round(...)` as the outermost
+  operation.
 - `forest.ts` `forageRatePerSec`: multiply the summed rate by `forageMult(state)`. Note the cap is
   derived from the rate, so Forage Tools also organically raises the satchel cap — intended
   (cap = "24h worth of the current rate" stays true).
@@ -108,9 +113,23 @@ Pure functions, same style as `farm.ts`/`forest.ts`:
 
 ### Save migration (`src/persistence/save.ts`)
 
-`SAVE_VERSION = 3`. `migrate`: `if (fromVersion < 3) s = { ...s, upgrades: s.upgrades ?? {} }`.
+`SAVE_VERSION = 3`. The new step **composes with** the existing v2 step — the full migrate body is:
+
+```ts
+function migrate(fromVersion: number, state: GameState): GameState {
+  let s = state;
+  if (fromVersion < 2) s = addForestFields(s);           // existing — keep
+  if (fromVersion < 3) s = { ...s, upgrades: s.upgrades ?? {} }; // new
+  return s;
+}
+```
+
 Additive and idempotent like v2. `isValidBaseState` unchanged (upgrades is backfilled, not
-validated). v1 saves chain v1→v2→v3.
+validated). v1 saves chain v1→v2→v3 through both branches.
+
+**Existing-test edit required:** `test/persistence/save.test.ts` hardcodes
+`expect(SAVE_VERSION).toBe(2)` — that assertion moves to `3` in the same commit as the bump.
+This is the only existing test the plan may touch; every other one of the 62 must pass unchanged.
 
 ## Store (`src/store/gameStore.ts`)
 
@@ -137,9 +156,17 @@ New components (existing card idiom — `cards.card`, accent `Pressable` buttons
   (`CreatureIcon` + name + `Lv N` + xp-to-next) with a Feed button, disabled when
   acorns < 25. Creatures in dungeons still feedable (instant item).
 
-zustand v5 discipline (the Plan 2 mount-crash trap): subscribe only to stable slices —
-`s.state.resources`, `s.state.upgrades`, `s.state.creatures`, action refs. All `.map`/derivations
-in the render body.
+zustand v5 discipline (the Plan 2 mount-crash trap): a selector must never return a freshly-built
+array/object. Two safe idioms, both already in the codebase: subscribe to a stable slice
+(`s.state.resources`, `s.state.upgrades`, `s.state.creatures`) and derive in the render body, OR
+return a computed **primitive** from the full state inside the selector, like `SatchelCard`'s
+`useGameStore((s) => satchelCap(s.state))` — that's also how the full-`GameState` helpers
+(`canAfford`, `upgradeCost`) get called from components.
+
+**`PlotGrid` touch (required):** its row container has no `flexWrap` — six `flex:1` plots would
+squeeze into one row. Add `flexWrap: 'wrap'` and give plots a fixed flex-basis (e.g. `flexBasis:
+'30%'` + `flexGrow: 1`) so 4–6 plots wrap into rows of three. This is the one existing component
+Plan 4 edits.
 
 ## Testing
 
@@ -154,9 +181,11 @@ New `test/engine/town.test.ts` (vitest, node env, same style as farm/forest test
   or unknown creature; works while assigned to a dungeon.
 - Save: v2→v3 backfills `upgrades: {}`; v1→v3 chain; corrupt still yields fresh state.
 
-Gates: `npx tsc --noEmit` clean, full `npm test` green (62 existing must hold), then **live browser
-QA on /town** (mount, buy an upgrade, watch cap change on Home/Forest, feed a treat, see level-up)
-— static review alone missed the zustand trap last time.
+Gates: `npx tsc --noEmit` clean, full `npm test` green (62 existing hold, except the one
+sanctioned `SAVE_VERSION` assertion edit), then **live browser QA on /town** — mount, buy an
+upgrade, watch cap change on Home/Forest, feed a treat, see level-up, AND buy Farm Expansion then
+check the Home plot grid wraps to two rows with the new plot plantable — static review alone
+missed the zustand trap last time.
 
 ## Out of scope
 
@@ -171,4 +200,8 @@ QA on /town** (mount, buy an upgrade, watch cap change on Home/Forest, feed a tr
 - Multiplier applied after the cap floor — upgrades visibly work at zero production.
 - Forage Tools also lifts satchel cap via the derived-cap rule — kept, it's the existing invariant.
 - Treats: flat 25🌰 → 100 XP — rarity XP curves already make treats naturally weaker on rares.
+- Treats work on dungeoned creatures, and `collectRun` reads power at collect time — so feeding
+  mid-run raises the loot multiplier. **Accepted:** the same acorns fed before the run buy the same
+  power (no value is created from nothing), and the power check is soft by design (mult clamped
+  0.5–1.5). Revisit only if it distorts play; snapshotting power at `startRun` is the fix then.
 - No tick loop on Town — resources never accrue passively; matches Friends screen.
