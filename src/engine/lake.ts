@@ -1,6 +1,6 @@
 import type { GameState, Rng } from './types';
-import { PETS, PET_IDS, BASE_ROD_RATE, CREEL_HOURS, CREEL_FLOOR, CATCH_CHANCE } from './content';
-import { DISCOVERY_WEIGHT } from './creatures';
+import { PETS, PET_IDS, BASE_ROD_RATE, CREEL_HOURS, CREEL_FLOOR, CATCH_CHANCE, HABITATS } from './content';
+import { DISCOVERY_WEIGHT, makeCreature } from './creatures';
 import { forageRatePerSec } from './forest';
 
 /** Fish/sec = flat rod base + all fish-affinity foragers (creature part is forageMult-boosted). */
@@ -56,4 +56,56 @@ export function collectCreel(state: GameState, rng: Rng): GameState {
     storage: { ...state.storage, creel: { fish: state.storage.creel.fish - bankFish } },
   };
   return rollCatch(banked, CATCH_CHANCE, rng);
+}
+
+export type HabitatStatus = 'unbuilt' | 'attracting' | 'ready' | 'done';
+
+/** Derived status — no separate "collected" flag (a water species is discovered ONLY via habitat). */
+export function habitatStatus(state: GameState, id: string, now: number): HabitatStatus {
+  const def = HABITATS.find((h) => h.id === id);
+  const h = state.habitats.find((x) => x.id === id);
+  if (!def || !h) return 'unbuilt';
+  if (state.discovered.includes(def.attracts)) return 'done';
+  if (h.builtAt === null) return 'unbuilt';
+  return now >= h.builtAt + def.attractSec * 1000 ? 'ready' : 'attracting';
+}
+
+export function canBuildHabitat(state: GameState, id: string): boolean {
+  const def = HABITATS.find((h) => h.id === id);
+  const h = state.habitats.find((x) => x.id === id);
+  if (!def || !h || h.builtAt !== null || state.discovered.includes(def.attracts)) return false;
+  const r = state.resources;
+  return (
+    r.gold >= (def.cost.gold ?? 0) &&
+    r.wood >= (def.cost.wood ?? 0) &&
+    r.acorns >= (def.cost.acorns ?? 0) &&
+    r.fish >= (def.cost.fish ?? 0)
+  );
+}
+
+/** Pay cost + stamp builtAt. No-op (same ref) unless unbuilt & affordable. */
+export function buildHabitat(state: GameState, id: string, now: number): GameState {
+  if (!canBuildHabitat(state, id)) return state;
+  const def = HABITATS.find((h) => h.id === id)!;
+  return {
+    ...state,
+    resources: {
+      gold: state.resources.gold - (def.cost.gold ?? 0),
+      wood: state.resources.wood - (def.cost.wood ?? 0),
+      acorns: state.resources.acorns - (def.cost.acorns ?? 0),
+      fish: state.resources.fish - (def.cost.fish ?? 0),
+    },
+    habitats: state.habitats.map((h) => (h.id === id ? { ...h, builtAt: now } : h)),
+  };
+}
+
+/** DETERMINISTIC directed discovery: on 'ready', discover the target + spawn it. No rng. No-op otherwise. */
+export function collectHabitat(state: GameState, id: string, now: number): GameState {
+  if (habitatStatus(state, id, now) !== 'ready') return state;
+  const def = HABITATS.find((h) => h.id === id)!;
+  return {
+    ...state,
+    creatures: [...state.creatures, makeCreature(def.attracts)],
+    discovered: [...state.discovered, def.attracts],
+  };
 }
