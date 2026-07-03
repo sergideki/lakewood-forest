@@ -1,5 +1,5 @@
 import type { GameState, Rng } from './types';
-import { PETS, PET_IDS, BASE_ROD_RATE, CREEL_HOURS, CREEL_FLOOR, CATCH_CHANCE, HABITATS } from './content';
+import { PETS, PET_IDS, BASE_ROD_RATE, CREEL_HOURS, CREEL_FLOOR, CATCH_CHANCE, getHabitat } from './content';
 import { DISCOVERY_WEIGHT, makeCreature } from './creatures';
 import { forageRatePerSec } from './forest';
 
@@ -62,7 +62,7 @@ export type HabitatStatus = 'unbuilt' | 'attracting' | 'ready' | 'done';
 
 /** Derived status — no separate "collected" flag (a water species is discovered ONLY via habitat). */
 export function habitatStatus(state: GameState, id: string, now: number): HabitatStatus {
-  const def = HABITATS.find((h) => h.id === id);
+  const def = getHabitat(id);
   const h = state.habitats.find((x) => x.id === id);
   if (!def || !h) return 'unbuilt';
   if (state.discovered.includes(def.attracts)) return 'done';
@@ -71,7 +71,7 @@ export function habitatStatus(state: GameState, id: string, now: number): Habita
 }
 
 export function canBuildHabitat(state: GameState, id: string): boolean {
-  const def = HABITATS.find((h) => h.id === id);
+  const def = getHabitat(id);
   const h = state.habitats.find((x) => x.id === id);
   if (!def || !h || h.builtAt !== null || state.discovered.includes(def.attracts)) return false;
   const r = state.resources;
@@ -86,7 +86,7 @@ export function canBuildHabitat(state: GameState, id: string): boolean {
 /** Pay cost + stamp builtAt. No-op (same ref) unless unbuilt & affordable. */
 export function buildHabitat(state: GameState, id: string, now: number): GameState {
   if (!canBuildHabitat(state, id)) return state;
-  const def = HABITATS.find((h) => h.id === id)!;
+  const def = getHabitat(id)!;
   return {
     ...state,
     resources: {
@@ -102,7 +102,7 @@ export function buildHabitat(state: GameState, id: string, now: number): GameSta
 /** DETERMINISTIC directed discovery: on 'ready', discover the target + spawn it. No rng. No-op otherwise. */
 export function collectHabitat(state: GameState, id: string, now: number): GameState {
   if (habitatStatus(state, id, now) !== 'ready') return state;
-  const def = HABITATS.find((h) => h.id === id)!;
+  const def = getHabitat(id)!;
   return {
     ...state,
     creatures: [...state.creatures, makeCreature(def.attracts)],

@@ -180,6 +180,13 @@ describe('habitat content integrity', () => {
       expect(SPECIES[h.attracts].affinity).toBe('fish');
     }
   });
+
+  it('maps habitats to water species one-to-one (no species reachable by two habitats)', () => {
+    const targets = HABITATS.map((h) => h.attracts);
+    expect(new Set(targets).size).toBe(targets.length);
+    const waterSpecies = Object.values(SPECIES).filter((sp) => sp.affinity === 'fish');
+    expect(new Set(targets)).toEqual(new Set(waterSpecies.map((sp) => sp.id)));
+  });
 });
 
 describe('rollDiscovery excludes water creatures (directed-only)', () => {
