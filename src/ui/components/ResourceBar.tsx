@@ -9,6 +9,7 @@ export function ResourceBar() {
       <Text style={styles.item}>🪙 {r.gold}</Text>
       <Text style={styles.item}>🪵 {r.wood}</Text>
       <Text style={styles.item}>🌰 {r.acorns}</Text>
+      <Text style={styles.item}>🐟 {r.fish}</Text>
     </View>
   );
 }

@@ -24,6 +24,7 @@ export default function Layout() {
         <Tabs.Screen name="forest"  options={{ title: '🌲 Forest' }} />
         <Tabs.Screen name="friends" options={{ title: '🐿️ Friends' }} />
         <Tabs.Screen name="town"    options={{ title: '🏪 Town' }} />
+        <Tabs.Screen name="lake"    options={{ title: '🎣 Lake' }} />
       </Tabs>
     </SafeAreaProvider>
   );

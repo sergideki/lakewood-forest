@@ -5,20 +5,35 @@ import { useGameStore } from '../../store/gameStore';
 import { getDungeon } from '../../engine';
 import { CreatureIcon } from './CreatureIcon';
 import { RARITY_COLOR } from '../rarity';
+import type { Creature } from '../../engine/types';
 
-export function CreatureRoster() {
+const FORAGE_GLYPH = { wood: '🪵', acorn: '🌰', fish: '🐟' } as const;
+
+export function CreatureRoster({
+  filter = (c: Creature) => c.affinity !== 'fish',
+  title = '🐿️ Creatures',
+  subtitle = 'Tap to send foraging (🪵/🌰 by nature); dungeon teams are set below',
+  emptyLabel,
+}: {
+  filter?: (c: Creature) => boolean;
+  title?: string;
+  subtitle?: string;
+  emptyLabel?: string;
+} = {}) {
   const creatures = useGameStore((s) => s.state.creatures);
   const assignTo = useGameStore((s) => s.assignCreatureTo);
+  const shown = creatures.filter(filter);
 
   return (
     <View style={cards.card}>
-      <Text style={cards.title}>🐿️ Creatures</Text>
-      <Text style={cards.sub}>Tap to send foraging (🪵/🌰 by nature); dungeon teams are set below</Text>
-      {creatures.map((c) => {
+      <Text style={cards.title}>{title}</Text>
+      <Text style={cards.sub}>{subtitle}</Text>
+      {shown.length === 0 && emptyLabel && <Text style={cards.sub}>{emptyLabel}</Text>}
+      {shown.map((c) => {
         const inDungeon = c.assignment.type === 'dungeon';
         const foraging = c.assignment.type === 'forage';
         const dungeonName = inDungeon && c.assignment.dungeonId ? getDungeon(c.assignment.dungeonId)?.name : null;
-        const status = inDungeon ? `delving ${dungeonName ?? '…'}` : foraging ? `foraging ${c.affinity === 'wood' ? '🪵' : '🌰'}` : 'resting';
+        const status = inDungeon ? `delving ${dungeonName ?? '…'}` : foraging ? `foraging ${FORAGE_GLYPH[c.affinity]}` : 'resting';
         return (
           <Pressable
             key={c.id}

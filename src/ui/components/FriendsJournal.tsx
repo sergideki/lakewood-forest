@@ -3,7 +3,7 @@ import { theme } from '../theme';
 import { cards } from '../styles';
 import { RARITY_COLOR } from '../rarity';
 import { useGameStore } from '../../store/gameStore';
-import { SPECIES } from '../../engine';
+import { SPECIES, PETS, PET_IDS } from '../../engine';
 import { CreatureIcon } from './CreatureIcon';
 
 const AFFINITY_EMOJI = { wood: '🪵', acorn: '🌰', fish: '🐟' } as const;
@@ -14,6 +14,7 @@ export function FriendsJournal() {
   // on mount ("getSnapshot should be cached") if a selector returns a freshly
   // built array/object — so never .filter/.map inside the selector.
   const discovered = useGameStore((s) => s.state.discovered);
+  const pets = useGameStore((s) => s.state.pets);
   const species = ALL_SPECIES;
 
   return (
@@ -40,6 +41,32 @@ export function FriendsJournal() {
               <Text style={styles.name}>{sp.name}</Text>
               <Text style={[styles.rarity, { color: RARITY_COLOR[sp.rarity] }]}>• {sp.rarity}</Text>
               <Text style={styles.affinity}>{AFFINITY_EMOJI[sp.affinity]} {sp.affinity}</Text>
+            </View>
+          );
+        })}
+      </View>
+
+      <View style={cards.card}>
+        <Text style={cards.title}>🐾 Pets</Text>
+        <Text style={cards.sub}>{pets.length} / {PET_IDS.length} caught</Text>
+      </View>
+      <View style={styles.grid}>
+        {PET_IDS.map((id) => {
+          const pet = PETS[id];
+          const caught = pets.includes(id);
+          if (!caught) {
+            return (
+              <View key={id} style={[styles.cell, styles.cellLocked]}>
+                <Text style={styles.lockGlyph}>❔</Text>
+                <Text style={styles.name}>???</Text>
+              </View>
+            );
+          }
+          return (
+            <View key={id} style={styles.cell}>
+              <Text style={styles.lockGlyph}>{pet.emoji}</Text>
+              <Text style={styles.name}>{pet.name}</Text>
+              <Text style={[styles.rarity, { color: RARITY_COLOR[pet.rarity] }]}>• {pet.rarity}</Text>
             </View>
           );
         })}
