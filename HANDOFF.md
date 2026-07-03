@@ -2,28 +2,36 @@
 
 Personal cozy forest-farm idle game. React Native + Expo. Solo project, own repo at `~/Documents/lakewood` (NOT part of the Dekimu monorepo).
 
-**Read first:** `docs/superpowers/specs/2026-07-02-lakewood-cozy-idle-design.md` (design) · `docs/superpowers/plans/2026-07-02-lakewood-v1-slice.md` (Plan 1).
+**Read first:** `docs/superpowers/specs/2026-07-03-lakewood-forest-plan2-design.md` (Forest design) · `docs/superpowers/plans/2026-07-03-lakewood-forest-plan2.md` (Plan 2). Earlier: Plan 1 spec/plan dated 2026-07-02.
+
+**PUBLIC repo:** https://github.com/sergideki/lakewood-forest (MIT, published 2026-07-03).
 
 <!-- LIVE:BEGIN -->
-- [x] id:plan1-slice | Plan 1 farm-loop vertical slice — SHIPPED, merged to main, simplified, retuned | branch:merged | owner:claude | gate:done | note: pure idle engine (23 tests) + Zustand store + Home screen + tabs + EAS profile. Verified live on web. Barn now holds 24h of production (BARN_HOURS in src/engine/farm.ts), not fixed 500.
-- [ ] id:plan2-forest | Plan 2 — Forest & creatures (foraging + satchel cap + chill dungeons + discover-in-the-wild creatures; wood/acorns return here) | branch: | pr: | owner:claude | gate:not-started | note: NEXT. Write spec-delta + plan via writing-plans, then subagent-driven. Forest tab is currently a placeholder.
-- [ ] id:plan3-friends | Plan 3 — Friends journal (creature roster + discovery) | owner:claude | gate:blocked-on-plan2 | note: placeholder tab exists.
-- [ ] id:plan4-town | Plan 4 — Town shop & upgrades (raise caps/rates, farm expansion) | owner:claude | gate:blocked-on-plan2 | note: placeholder tab exists. This is where Isekai's "keep 2-3 upgrade tracks" lesson lands.
-- [ ] id:lake | The lake 🎣 — fishing + water creatures + attract-creatures-via-habitats | owner:claude | gate:future | note: founder's request; parked in spec §8. Likely first post-v1 expansion after Forest.
-- [ ] id:founder-run | Run on real phone: `npx expo start` → Expo Go, scan QR | owner:founder | gate:owed | note: web build verified; on-device not yet.
+- [x] id:plan1-slice | Plan 1 farm-loop vertical slice — SHIPPED | branch:merged | owner:claude | gate:done | note: pure idle engine + Zustand + Home screen + tabs. Barn holds 24h (BARN_HOURS in src/engine/farm.ts).
+- [x] id:plan2-forest | Plan 2 — Forest & creatures — SHIPPED + PUBLISHED | branch:merged | owner:claude | gate:done | note: forage→capped satchel (wood/acorns), no-fail timed dungeons w/ soft power check, rarity-weighted discovery (auto-join), passive XP auto-level. 62 vitest tests, tsc clean. Verified LIVE end-to-end in browser (mount, forage/rest, dungeon run, collect, discovery toast). Merged to main 48e819d; renamed to "Lakewood Forest" + README + MIT.
+- [ ] id:plan2b-sprites | Plan 2b — original Gen-4-style creature sprites (replace emoji) | owner:claude | gate:not-started | note: NEXT. ~10 original 64×64 chibi critters in the Diamond&Pearl palette — ORIGINAL art only, NO ripped Pokémon assets (public named repo + MIT; TPC DMCAs). Swap is localized: add `sprite` to `Species`, bundle PNGs under `assets/creatures/`, trade `<Text>{emoji}</Text>`→`<Image>` in CreatureRoster/DungeonCard chips/DiscoveryToast. Decision in spec §8b. Brainstorm the art source (commission/CC0/AI-gen) first.
+- [ ] id:plan3-friends | Plan 3 — Friends journal (creature roster + discovery) | owner:claude | gate:ready | note: UNBLOCKED (plan2 shipped). `discovered` is now populated; Plan 3 is pure read-only UI over it. Placeholder tab exists.
+- [ ] id:plan4-town | Plan 4 — Town shop & upgrades (raise caps/rates, farm expansion; also creature-level accelerators) | owner:claude | gate:ready | note: UNBLOCKED. This is where wood/acorn/gold get SINKS (they only bank today) + Isekai's "2-3 upgrade tracks" lesson. Placeholder tab exists.
+- [ ] id:lake | The lake 🎣 — fishing + water creatures + attract-via-habitats | owner:claude | gate:future | note: founder's request; parked in spec §8. Likely first expansion after Town.
+- [ ] id:founder-run | Run on real phone: `npx expo start` → Expo Go, scan QR | owner:founder | gate:owed | note: web verified end-to-end; on-device not yet.
 - [ ] id:founder-apk | Build APK: `eas login` → `eas build:configure` → `eas build -p android --profile preview` | owner:founder | gate:owed | note: needs interactive Expo account — the one headless-blocked step. eas.json profile ready.
-- [ ] id:founder-license | Decide LICENSE (template MIT sitting at root) + keep-or-drop `.claude/settings.json` (Expo dev plugin) | owner:founder | gate:owed | note: clean-room build, so licensing is unconstrained.
 <!-- LIVE:END -->
 
-## State (as of 2026-07-02)
+> DONE this session: id:founder-license — MIT chosen + shipped, `.claude/settings.json` untracked + gitignored (closed by the rename commit 4ed887c).
 
-- **main** is green: `npx tsc --noEmit` clean, `npm test` → 23/23. Latest commit `16796d8` (barn 24h retune).
-- Full loop works and was driven live in a browser: plant crops → assign family → barn fills on real wall-clock → Collect banks gold → offline catch-up → placeholder tabs.
-- Engine is pure/RN-free in `src/engine/` (tested with vitest). Store in `src/store/gameStore.ts` persists on background + actions (not every tick). UI = dashboard cards (layout B); animated "living farm scene" (layout A) is a deliberate later graft.
-- v1 is gold-only; wood/acorns were removed until the Forest gives them a source (Plan 2). Villager levels + a second "version" field also removed as dead weight.
+## State (as of 2026-07-03)
+
+- **main** is green: `npx tsc --noEmit` clean, `npm test` → 62/62. Plan 2 merged (48e819d), pushed to the public repo.
+- Farm + Forest loops both work, driven live in a browser end-to-end.
+- Engine is pure/RN-free in `src/engine/` (`farm`, `creatures`, `forest`, `idle`), tested with vitest. Discovery/loot rolls take an injected `rng` (default Math.random, faked in tests) so the engine stays deterministic. Store `src/store/gameStore.ts` wraps it; `applyElapsed` runs before every mutating action + on a 1s foreground tick.
+- SAVE_VERSION is 2; a v1 (farm-only) save migrates additively (`src/persistence/save.ts`).
+- Resources: gold/wood/acorns all BANK but have no SINK yet — sinks land in Plan 4 (Town). Creatures level via passive XP now; paid accelerators are Plan 4.
+- UI = dashboard cards. Creature art is EMOJI placeholders (Plan 2b swaps in real sprites via the single `Species.emoji`/future `sprite` field).
 
 ## Gotchas
 
-- Web needs `expo-linking` + `expo-constants` (expo-router peers) — installed; `.npmrc` has `legacy-peer-deps=true` so peers don't auto-install, watch for missing-peer bundle 500s.
-- Dev server for localhost: `npx expo start --web --port 8081` (background one dies at session end).
+- **zustand v5 selector trap (cost us a crash this session):** NEVER return a freshly-built array/object from a `useGameStore(s => ...)` selector (e.g. `s => s.state.creatures.filter(...)`). zustand v5 uses `useSyncExternalStore`; a new reference every render reads as a changed snapshot → infinite loop → "getSnapshot should be cached" → component crashes ON MOUNT. Subscribe to the stable slice (`s => s.state` or `s => s.state.creatures`) and do `.filter`/`.find`/`.map` in the render body. **Two static code reviews missed this; only the live browser mount caught it — always do a real mount/QA drive on new RN screens (no component-test coverage exists).**
+- Web needs `expo-linking` + `expo-constants` (expo-router peers) — installed; `.npmrc` has `legacy-peer-deps=true`, watch for missing-peer bundle 500s.
+- Dev server: `npx expo start --web --port <free port>` (watch mode). Do NOT pass `CI=1` when you need it to rebuild on file edits — CI mode disables reloads and serves a stale bundle.
 - Commit-msg hook (inherited) wants a `regression check:` line in the body.
+- QA tip: to exercise the ready→Collect→discovery path without waiting 15 min, temporarily drop a dungeon's `durationSec` (and bump `baseDiscoveryChance`) in `src/engine/content.ts`, then `git checkout` it after — clock can't be fast-forwarded in the browser.
