@@ -1,8 +1,15 @@
+import { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { theme } from '../src/ui/theme';
+import { useGameStore } from '../src/store/gameStore';
 
 export default function Layout() {
+  // Hydrate at the root: a deep link straight to /town or /forest must load the
+  // save before any commit can persist over it (Home is not always mounted first).
+  const load = useGameStore((s) => s.load);
+  useEffect(() => { load(); }, [load]);
+
   return (
     <SafeAreaProvider>
       <Tabs

@@ -48,12 +48,14 @@ function newlyDiscovered(prev: GameState, next: GameState): SpeciesId | null {
 }
 
 export const useGameStore = create<GameStore>((set, get) => {
-  const commit = (next: GameState) => { persist(next); set({ state: next }); };
+  // Never persist before load() has hydrated the store: a commit on the fresh
+  // initial state would overwrite the real save (deep link to /town, fast tap).
+  const commit = (next: GameState) => { if (get().loaded) persist(next); set({ state: next }); };
 
   /** Run a discovery-capable engine action, surfacing any new species for the toast. */
   const commitWithDiscovery = (prev: GameState, next: GameState) => {
     const found = newlyDiscovered(prev, next);
-    persist(next);
+    if (get().loaded) persist(next);
     set(found ? { state: next, lastDiscovery: found } : { state: next });
   };
 
@@ -102,6 +104,6 @@ export const useGameStore = create<GameStore>((set, get) => {
 
     dismissDiscovery: () => set({ lastDiscovery: null }),
 
-    save: () => persist(get().state),
+    save: () => { if (get().loaded) persist(get().state); },
   };
 });
