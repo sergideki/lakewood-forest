@@ -77,8 +77,8 @@ export function PlotGrid() {
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', gap: 10 },
-  plot: { flex: 1, backgroundColor: '#3c5a3f', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  plot: { flexBasis: '30%', flexGrow: 1, backgroundColor: '#3c5a3f', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
   plotEmoji: { fontSize: 24 },
   plotLabel: { color: theme.text, fontSize: 11, marginTop: 4 },
 
