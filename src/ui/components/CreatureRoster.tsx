@@ -3,14 +3,8 @@ import { theme } from '../theme';
 import { cards } from '../styles';
 import { useGameStore } from '../../store/gameStore';
 import { getDungeon } from '../../engine';
-import type { Rarity } from '../../engine/types';
 import { CreatureIcon } from './CreatureIcon';
-
-const RARITY_COLOR: Record<Rarity, string> = {
-  common: '#9fb6a4',
-  uncommon: '#7fc8ff',
-  rare: '#e6b3ff',
-};
+import { RARITY_COLOR } from '../rarity';
 
 export function CreatureRoster() {
   const creatures = useGameStore((s) => s.state.creatures);
