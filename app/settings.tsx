@@ -11,6 +11,11 @@ import { RELEASES_LATEST_API, parseRelease, isNewer, type ReleaseInfo } from '..
 
 const CURRENT_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
+/** Open a URL, swallowing the rejection if no app can handle it (avoids an unhandled rejection). */
+function openExternal(url: string) {
+  Linking.openURL(url).catch(() => {});
+}
+
 type UpdateState =
   | { kind: 'idle' }
   | { kind: 'checking' }
@@ -63,18 +68,18 @@ export default function Settings() {
   const downloadAndInstall = async (info: ReleaseInfo) => {
     // Non-Android (or no APK asset): just open the release page in the browser.
     if (Platform.OS !== 'android' || !info.apkUrl) {
-      Linking.openURL(info.htmlUrl);
+      openExternal(info.htmlUrl);
       return;
     }
     setInstalling(true);
     setStatus('Downloading update…');
+    // Dynamic import keeps these Android-native modules out of the web bundle.
+    // Legacy submodule: expo-file-system v57's default export moved to a new File/Paths API;
+    // downloadAsync + getContentUriAsync (needed for the install intent) live in /legacy.
+    const FileSystem = await import('expo-file-system/legacy');
+    const target = `${FileSystem.cacheDirectory}lakewood-update.apk`;
     try {
-      // Dynamic import keeps these Android-native modules out of the web bundle.
-      // Legacy submodule: expo-file-system v57's default export moved to a new File/Paths API;
-      // downloadAsync + getContentUriAsync (needed for the install intent) live in /legacy.
-      const FileSystem = await import('expo-file-system/legacy');
       const IntentLauncher = await import('expo-intent-launcher');
-      const target = `${FileSystem.cacheDirectory}lakewood-update.apk`;
       const { uri } = await FileSystem.downloadAsync(info.apkUrl, target);
       const contentUri = await FileSystem.getContentUriAsync(uri);
       setStatus('Opening installer…');
@@ -84,10 +89,12 @@ export default function Settings() {
         type: 'application/vnd.android.package-archive',
       });
       setStatus('Follow the Android prompt to finish installing.');
-    } catch (e) {
-      // Fall back to the release page so the user can always get the APK manually.
+    } catch {
+      // Fall back to the release page so the user can always get the APK manually,
+      // and drop the partial download so it can't linger or be half-installed.
+      await FileSystem.deleteAsync(target, { idempotent: true }).catch(() => {});
       setStatus('Auto-install failed — opening the release page.');
-      Linking.openURL(info.htmlUrl);
+      openExternal(info.htmlUrl);
     } finally {
       setInstalling(false);
     }

@@ -89,10 +89,16 @@ export const useGameStore = create<GameStore>((set, get) => {
     lastCatch: null,
 
     load: async () => {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      const restored = applyElapsed(deserialize(raw), Date.now());
-      persist(restored);
-      set({ state: restored, loaded: true });
+      try {
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        const restored = applyElapsed(deserialize(raw), Date.now());
+        persist(restored);
+        set({ state: restored, loaded: true });
+      } catch {
+        // Storage read failed — still flip `loaded` so the game boots on the fresh initial
+        // state and can persist from here (otherwise it would hang un-hydrated forever).
+        set({ loaded: true });
+      }
     },
 
     tick: (now) => set({ state: applyElapsed(get().state, now) }),
