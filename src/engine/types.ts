@@ -22,7 +22,7 @@ export interface Villager {
 
 export type Rarity = 'common' | 'uncommon' | 'rare';
 export type SpeciesId = string;
-export type Material = 'wood' | 'acorn';
+export type Material = 'wood' | 'acorn' | 'fish';
 
 /** Injected randomness so engine rolls stay deterministic under test. */
 export type Rng = () => number;
@@ -72,15 +72,40 @@ export interface Dungeon {
   xpReward: number; // XP lump per creature on completion
 }
 
+export interface HabitatState {
+  id: string;
+  builtAt: number | null; // epoch ms; null = unbuilt
+}
+
+export interface Habitat {
+  id: string;
+  name: string;
+  emoji: string;
+  attracts: SpeciesId;      // the ONE water creature this habitat attracts
+  cost: Partial<Resources>; // absent component = 0
+  attractSec: number;       // build → ready
+}
+
+export type PetId = string;
+
+export interface Pet {
+  id: PetId;
+  name: string;
+  emoji: string;
+  rarity: Rarity;
+}
+
 export interface Storage {
   barn: { amount: number };
   satchel: { wood: number; acorn: number };
+  creel: { fish: number };
 }
 
 export interface Resources {
   gold: number;
   wood: number;
   acorns: number;
+  fish: number;
 }
 
 export interface Meta {
@@ -108,5 +133,7 @@ export interface GameState {
   dungeons: DungeonState[];
   discovered: SpeciesId[];
   upgrades: Record<UpgradeId, number>; // upgrade id -> owned level; absent key = 0
+  habitats: HabitatState[];
+  pets: PetId[]; // discovered pet ids; absent/[] = none caught
   meta: Meta;
 }

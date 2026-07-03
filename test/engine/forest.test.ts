@@ -19,14 +19,14 @@ function seqRng(values: number[]): () => number {
 }
 
 describe('content tables', () => {
-  it('has ~10 species, each with rarity + wood|acorn affinity', () => {
+  it('has ~10 species, each with rarity + wood|acorn|fish affinity', () => {
     const ids = Object.keys(SPECIES);
     expect(ids.length).toBeGreaterThanOrEqual(10);
     for (const id of ids) {
       const s = SPECIES[id];
       expect(s.id).toBe(id);
       expect(['common', 'uncommon', 'rare']).toContain(s.rarity);
-      expect(['wood', 'acorn']).toContain(s.affinity);
+      expect(['wood', 'acorn', 'fish']).toContain(s.affinity);
       expect(s.emoji.length).toBeGreaterThan(0);
     }
   });

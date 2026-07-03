@@ -57,10 +57,11 @@ function addForestFields(old: GameState): GameState {
   const r = old.resources as Partial<GameState['resources']>;
   return {
     ...old,
-    resources: { gold: r.gold ?? 0, wood: r.wood ?? 0, acorns: r.acorns ?? 0 },
+    resources: { gold: r.gold ?? 0, wood: r.wood ?? 0, acorns: r.acorns ?? 0, fish: r.fish ?? 0 },
     storage: {
       barn: old.storage.barn,
       satchel: old.storage.satchel ?? { wood: 0, acorn: 0 },
+      creel: old.storage.creel ?? { fish: 0 },
     },
     creatures: old.creatures ?? STARTER_SPECIES.map(makeCreature),
     dungeons: old.dungeons ?? DUNGEONS.map((d) => ({ id: d.id, activeRun: null })),

@@ -16,6 +16,7 @@ export function upgradeCost(id: UpgradeId, ownedLevel: number): Resources | null
     gold: Math.ceil((def.baseCost.gold ?? 0) * mult),
     wood: Math.ceil((def.baseCost.wood ?? 0) * mult),
     acorns: Math.ceil((def.baseCost.acorns ?? 0) * mult),
+    fish: Math.ceil((def.baseCost.fish ?? 0) * mult),
   };
 }
 
@@ -38,6 +39,7 @@ export function purchaseUpgrade(state: GameState, id: UpgradeId): GameState {
       gold: state.resources.gold - cost.gold,
       wood: state.resources.wood - cost.wood,
       acorns: state.resources.acorns - cost.acorns,
+      fish: state.resources.fish - cost.fish,
     },
     upgrades: { ...state.upgrades, [id]: level + 1 },
   };

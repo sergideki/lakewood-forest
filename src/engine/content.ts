@@ -1,4 +1,4 @@
-import type { Crop, CropId, Species, SpeciesId, Dungeon, TownUpgrade, UpgradeId } from './types';
+import type { Crop, CropId, Species, SpeciesId, Dungeon, TownUpgrade, UpgradeId, Habitat, Pet, PetId } from './types';
 
 export const CROPS: Record<CropId, Crop> = {
   wheat:  { id: 'wheat',  name: 'Wheat',  emoji: '🌾', growSec: 100, gold: 5 },
@@ -19,6 +19,10 @@ export const SPECIES: Record<SpeciesId, Species> = {
   owlin:     { id: 'owlin',     name: 'Owlin',      emoji: '🦉', rarity: 'rare',     affinity: 'wood'  },
   stagheart: { id: 'stagheart', name: 'Stagheart',  emoji: '🦌', rarity: 'rare',     affinity: 'acorn' },
   emberkit:  { id: 'emberkit',  name: 'Ember Kit',  emoji: '🦝', rarity: 'rare',     affinity: 'wood'  },
+  ripplefrog:  { id: 'ripplefrog',  name: 'Ripple Frog',  emoji: '🐸', rarity: 'common',   affinity: 'fish' },
+  puddleduck:  { id: 'puddleduck',  name: 'Puddle Duck',  emoji: '🦆', rarity: 'common',   affinity: 'fish' },
+  koisprite:   { id: 'koisprite',   name: 'Koi Sprite',   emoji: '🎏', rarity: 'uncommon', affinity: 'fish' },
+  mistleotter: { id: 'mistleotter', name: 'Mistle Otter', emoji: '🦦', rarity: 'rare',     affinity: 'fish' },
 };
 
 export const STARTER_SPECIES: SpeciesId[] = ['fernling', 'pebblepup'];
@@ -44,3 +48,32 @@ export const UPGRADE_IDS: UpgradeId[] = Object.keys(UPGRADES);
 
 export const TREAT_COST_ACORNS = 25;
 export const TREAT_XP = 100;
+
+export const HABITATS: Habitat[] = [
+  { id: 'lilypads',  name: 'Lily Pads',  emoji: '🪷', attracts: 'ripplefrog',  cost: { fish: 20 },            attractSec: 15 * 60  },
+  { id: 'reedbed',   name: 'Reed Bed',   emoji: '🎋', attracts: 'puddleduck',  cost: { fish: 40, wood: 20 },  attractSec: 60 * 60  },
+  { id: 'koistones', name: 'Koi Stones', emoji: '🪨', attracts: 'koisprite',   cost: { fish: 80, gold: 50 },  attractSec: 2 * 3600 },
+  { id: 'otterholt', name: 'Otter Holt', emoji: '🕳️', attracts: 'mistleotter', cost: { fish: 150, wood: 60 }, attractSec: 4 * 3600 },
+];
+
+export function getHabitat(id: string): Habitat | undefined {
+  return HABITATS.find((h) => h.id === id);
+}
+
+export const HABITAT_IDS: string[] = HABITATS.map((h) => h.id);
+
+export const PETS: Record<PetId, Pet> = {
+  pondsnail:    { id: 'pondsnail',    name: 'Pond Snail',    emoji: '🐌', rarity: 'common'   },
+  waterbeetle:  { id: 'waterbeetle',  name: 'Water Beetle',  emoji: '🪲', rarity: 'common'   },
+  dragonfly:    { id: 'dragonfly',    name: 'Dragonfly',     emoji: '🦋', rarity: 'uncommon' },
+  pebbleturtle: { id: 'pebbleturtle', name: 'Pebble Turtle', emoji: '🐢', rarity: 'uncommon' },
+  crawdad:      { id: 'crawdad',      name: 'Crawdad',       emoji: '🦞', rarity: 'rare'     },
+  pondnewt:     { id: 'pondnewt',     name: 'Pond Newt',     emoji: '🦎', rarity: 'rare'     },
+};
+
+export const PET_IDS: PetId[] = Object.keys(PETS);
+
+export const BASE_ROD_RATE = 0.05; // fish/sec with zero water creatures (bootstraps the loop)
+export const CREEL_HOURS = 24;     // creel holds ~a day of the current fish rate
+export const CREEL_FLOOR = 200;    // minimum creel capacity
+export const CATCH_CHANCE = 0.25;  // chance to catch a pet per NON-EMPTY creel collect

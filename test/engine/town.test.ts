@@ -17,7 +17,7 @@ import type { GameState } from '../../src/engine/types';
 
 function rich(gold = 10_000, wood = 10_000, acorns = 10_000): GameState {
   const s = createInitialState(0);
-  return { ...s, resources: { gold, wood, acorns } };
+  return { ...s, resources: { gold, wood, acorns, fish: 0 } };
 }
 
 describe('upgrade content', () => {
@@ -40,8 +40,8 @@ describe('upgradeLevel / upgradeCost', () => {
   it('cost grows by costGrowth per owned level, ceil per component', () => {
     const c0 = upgradeCost('barn-silo', 0)!;
     const c1 = upgradeCost('barn-silo', 1)!;
-    expect(c0).toEqual({ gold: 40, wood: 25, acorns: 0 });
-    expect(c1).toEqual({ gold: Math.ceil(40 * 1.8), wood: Math.ceil(25 * 1.8), acorns: 0 });
+    expect(c0).toEqual({ gold: 40, wood: 25, acorns: 0, fish: 0 });
+    expect(c1).toEqual({ gold: Math.ceil(40 * 1.8), wood: Math.ceil(25 * 1.8), acorns: 0, fish: 0 });
   });
 
   it('returns null at max level and for unknown ids', () => {
@@ -55,7 +55,7 @@ describe('purchaseUpgrade', () => {
     const s0 = rich();
     const s1 = purchaseUpgrade(s0, 'barn-silo');
     expect(upgradeLevel(s1, 'barn-silo')).toBe(1);
-    expect(s1.resources).toEqual({ gold: 10_000 - 40, wood: 10_000 - 25, acorns: 10_000 });
+    expect(s1.resources).toEqual({ gold: 10_000 - 40, wood: 10_000 - 25, acorns: 10_000, fish: 0 });
   });
 
   it('is a no-op when unaffordable, at max level, or unknown id', () => {
@@ -114,7 +114,7 @@ describe('buyTreat', () => {
   });
 
   it('is a no-op when acorns are short or the creature is unknown', () => {
-    const broke = { ...rich(), resources: { gold: 0, wood: 0, acorns: TREAT_COST_ACORNS - 1 } };
+    const broke = { ...rich(), resources: { gold: 0, wood: 0, acorns: TREAT_COST_ACORNS - 1, fish: 0 } };
     expect(buyTreat(broke, broke.creatures[0].id)).toBe(broke);
     const s = rich();
     expect(buyTreat(s, 'cr-ghost')).toBe(s);

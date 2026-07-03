@@ -6,7 +6,7 @@ import { useGameStore } from '../../store/gameStore';
 import { SPECIES } from '../../engine';
 import { CreatureIcon } from './CreatureIcon';
 
-const AFFINITY_EMOJI = { wood: '🪵', acorn: '🌰' } as const;
+const AFFINITY_EMOJI = { wood: '🪵', acorn: '🌰', fish: '🐟' } as const;
 const ALL_SPECIES = Object.values(SPECIES); // static catalog — build once at module load
 
 export function FriendsJournal() {
