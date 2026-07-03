@@ -2,7 +2,7 @@ import type { GameState } from '../engine/types';
 import { createInitialState, makeCreature } from '../engine';
 import { DUNGEONS, STARTER_SPECIES } from '../engine/content';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 interface SaveEnvelope {
   version: number;
@@ -45,10 +45,11 @@ function isValidBaseState(state: unknown): state is GameState {
   return true;
 }
 
-/** Additive migrations. v1 (farm-only) -> v2 (forest). Idempotent: only fills missing fields. */
+/** Additive migrations. v1 (farm-only) -> v2 (forest) -> v3 (town upgrades). Idempotent. */
 function migrate(fromVersion: number, state: GameState): GameState {
   let s = state;
   if (fromVersion < 2) s = addForestFields(s);
+  if (fromVersion < 3) s = { ...s, upgrades: s.upgrades ?? {} };
   return s;
 }
 

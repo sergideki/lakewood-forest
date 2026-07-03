@@ -51,12 +51,42 @@ describe('v1 -> v2 migration', () => {
     expect(s.discovered.sort()).toEqual(['fernling', 'pebblepup']);
   });
 
-  it('leaves a current v2 save untouched', () => {
+  it('leaves a current save untouched', () => {
     const v2 = serialize(plantCrop(createInitialState(1), 'plot-1', 'berry'));
     expect(JSON.parse(v2).version).toBe(SAVE_VERSION);
-    expect(SAVE_VERSION).toBe(2);
+    expect(SAVE_VERSION).toBe(3);
     const restored = deserialize(v2);
     expect(restored.creatures).toHaveLength(2);
     expect(Object.keys(SPECIES).length).toBeGreaterThanOrEqual(10);
+  });
+});
+
+describe('v2 -> v3 migration', () => {
+  it('backfills upgrades on a v2 (forest, pre-town) save', () => {
+    const v2State = createInitialState(0) as unknown as Record<string, unknown>;
+    delete v2State.upgrades; // simulate a save written before Plan 4
+    const restored = deserialize(JSON.stringify({ version: 2, state: v2State }));
+    expect(restored.upgrades).toEqual({});
+  });
+
+  it('chains v1 -> v3: forest fields AND upgrades are backfilled', () => {
+    const v1Envelope = JSON.stringify({
+      version: 1,
+      state: {
+        resources: { gold: 5 },
+        plots: [{ id: 'plot-1', crop: null }],
+        villagers: [],
+        storage: { barn: { amount: 0 } },
+        meta: { lastSeen: 0 },
+      },
+    });
+    const s = deserialize(v1Envelope);
+    expect(s.storage.satchel).toEqual({ wood: 0, acorn: 0 }); // v2 step still ran
+    expect(s.upgrades).toEqual({});                            // v3 step ran
+  });
+
+  it('preserves owned upgrade levels on a current save', () => {
+    const s0 = { ...createInitialState(0), upgrades: { 'barn-silo': 2 } };
+    expect(deserialize(serialize(s0)).upgrades).toEqual({ 'barn-silo': 2 });
   });
 });
