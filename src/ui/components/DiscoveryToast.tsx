@@ -2,6 +2,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { theme } from '../theme';
 import { useGameStore } from '../../store/gameStore';
 import { SPECIES } from '../../engine';
+import { CreatureIcon } from './CreatureIcon';
 
 export function DiscoveryToast() {
   const speciesId = useGameStore((s) => s.lastDiscovery);
@@ -13,7 +14,9 @@ export function DiscoveryToast() {
     <Pressable style={styles.overlay} onPress={dismiss}>
       <View style={styles.card}>
         <Text style={styles.spark}>✨ New friend discovered! ✨</Text>
-        <Text style={styles.emoji}>{sp.emoji}</Text>
+        <View style={styles.iconWrap}>
+          <CreatureIcon speciesId={sp.id} emoji={sp.emoji} size={56} />
+        </View>
         <Text style={styles.name}>{sp.name}</Text>
         <Text style={styles.rarity}>{sp.rarity} · forages {sp.affinity === 'wood' ? '🪵' : '🌰'}</Text>
         <Text style={styles.tap}>tap to continue</Text>
@@ -28,7 +31,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: theme.card, borderColor: theme.accent, borderWidth: 2, borderRadius: 18,
     padding: 24, alignItems: 'center', width: '80%' },
   spark: { color: theme.accent, fontSize: 14, fontWeight: '700', marginBottom: 8 },
-  emoji: { fontSize: 56, marginVertical: 8 },
+  iconWrap: { marginVertical: 8 },
   name: { color: theme.text, fontSize: 22, fontWeight: '800' },
   rarity: { color: theme.textDim, fontSize: 13, marginTop: 4 },
   tap: { color: theme.textDim, fontSize: 11, marginTop: 16 },
