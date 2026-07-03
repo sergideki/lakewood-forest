@@ -4,6 +4,7 @@ import { theme } from '../theme';
 import { cards } from '../styles';
 import { useGameStore } from '../../store/gameStore';
 import { getDungeon, teamPower } from '../../engine';
+import { CreatureIcon } from './CreatureIcon';
 
 function fmt(sec: number): string {
   if (sec <= 0) return 'ready';
@@ -55,7 +56,8 @@ export function DungeonCard({ dungeonId, now }: { dungeonId: string; now: number
               const on = selected.includes(c.id);
               return (
                 <Pressable key={c.id} style={[styles.chip, on && styles.chipOn]} onPress={() => toggle(c.id)}>
-                  <Text style={styles.chipText}>{c.emoji} {c.name}</Text>
+                  <CreatureIcon speciesId={c.species} emoji={c.emoji} size={16} />
+                  <Text style={styles.chipText}>{c.name}</Text>
                 </Pressable>
               );
             })}
@@ -92,8 +94,8 @@ const styles = StyleSheet.create({
   sub: { color: theme.textDim, fontSize: 12, marginTop: 4 },
   timer: { color: theme.accent, fontSize: 18, fontWeight: '700', marginTop: 6 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, marginBottom: 10 },
-  chip: { backgroundColor: '#26332a', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6,
-    borderWidth: 1, borderColor: 'transparent' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#26332a', borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: 'transparent' },
   chipOn: { borderColor: theme.accent, backgroundColor: '#2e4535' },
   chipText: { color: theme.text, fontSize: 12, fontWeight: '600' },
   btn: { backgroundColor: theme.accent, borderRadius: 14, paddingVertical: 9, alignItems: 'center', marginTop: 4 },
