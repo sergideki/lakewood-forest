@@ -12,14 +12,14 @@ import type { SpeciesId } from '../engine/types';
  * Filename convention: assets/creatures/<speciesId>.png (e.g. fernling.png).
  */
 export const CREATURE_SPRITES: Partial<Record<SpeciesId, ImageSourcePropType>> = {
-  // fernling: require('../../assets/creatures/fernling.png'),
-  // pebblepup: require('../../assets/creatures/pebblepup.png'),
-  // mossmouse: require('../../assets/creatures/mossmouse.png'),
-  // barkbug: require('../../assets/creatures/barkbug.png'),
-  // hedgehush: require('../../assets/creatures/hedgehush.png'),
-  // cedarcat: require('../../assets/creatures/cedarcat.png'),
-  // lumifox: require('../../assets/creatures/lumifox.png'),
-  // owlin: require('../../assets/creatures/owlin.png'),
-  // stagheart: require('../../assets/creatures/stagheart.png'),
-  // emberkit: require('../../assets/creatures/emberkit.png'),
+  fernling: require('../../assets/creatures/fernling.png'),
+  pebblepup: require('../../assets/creatures/pebblepup.png'),
+  mossmouse: require('../../assets/creatures/mossmouse.png'),
+  barkbug: require('../../assets/creatures/barkbug.png'),
+  hedgehush: require('../../assets/creatures/hedgehush.png'),
+  cedarcat: require('../../assets/creatures/cedarcat.png'),
+  lumifox: require('../../assets/creatures/lumifox.png'),
+  owlin: require('../../assets/creatures/owlin.png'),
+  stagheart: require('../../assets/creatures/stagheart.png'),
+  emberkit: require('../../assets/creatures/emberkit.png'),
 };
