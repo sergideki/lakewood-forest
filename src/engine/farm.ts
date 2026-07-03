@@ -1,13 +1,16 @@
 import type { GameState, CropId } from './types';
 import { CROPS } from './content';
+import { barnCapMult } from './town';
 
 /** The barn holds this many hours of the current production rate before it's "full". */
 export const BARN_HOURS = 24;
 
-/** Derived barn capacity = a day's worth of the current farm rate, with a sane floor. */
+/** Derived barn capacity = a day's worth of the current farm rate, floored, then upgraded. */
 export function barnCap(state: GameState): number {
   const perDay = farmRatePerSec(state) * BARN_HOURS * 3600;
-  return Math.max(500, Math.round(perDay));
+  // Multiplier applies AFTER the floor (upgrade visible at zero production); final round
+  // keeps the cap an integer (odd cap x 1.5 would otherwise leak fractions to the UI).
+  return Math.round(Math.max(500, Math.round(perDay)) * barnCapMult(state));
 }
 
 /** Gold produced per second across all planted plots, gated + boosted by farm villagers. */

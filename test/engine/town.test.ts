@@ -11,6 +11,8 @@ import {
   satchelCapMult,
   forageMult,
 } from '../../src/engine/town';
+import { barnCap } from '../../src/engine/farm';
+import { satchelCap, forageRatePerSec, assignCreature } from '../../src/engine/forest';
 import type { GameState } from '../../src/engine/types';
 
 function rich(gold = 10_000, wood = 10_000, acorns = 10_000): GameState {
@@ -129,5 +131,35 @@ describe('buyTreat', () => {
     };
     const s1 = buyTreat(inRun, c.id);
     expect(s1.creatures.find((x) => x.id === c.id)!.level).toBe(2);
+  });
+});
+
+describe('multipliers wired into caps and rates', () => {
+  it('barn-silo scales barnCap (after the 500 floor) and stays an integer', () => {
+    const s0 = createInitialState(0); // no production -> floor cap 500
+    expect(barnCap(s0)).toBe(500);
+    const s1 = { ...s0, upgrades: { 'barn-silo': 1 } };
+    expect(barnCap(s1)).toBe(750); // 500 * 1.5
+    expect(Number.isInteger(barnCap(s1))).toBe(true);
+  });
+
+  it('satchel-stitch scales satchelCap (after the 200 floor) and stays an integer', () => {
+    const s0 = createInitialState(0); // nobody foraging -> floor cap 200
+    expect(satchelCap(s0)).toBe(200);
+    const s1 = { ...s0, upgrades: { 'satchel-stitch': 3 } };
+    expect(satchelCap(s1)).toBe(500); // 200 * 2.5
+    expect(Number.isInteger(satchelCap(s1))).toBe(true);
+  });
+
+  it('forage-tools scales forageRatePerSec, which also lifts the derived satchel cap', () => {
+    const s0 = createInitialState(0);
+    const foraging = assignCreature(s0, s0.creatures[0].id, 'forage'); // starter #1 = fernling (acorn affinity)
+    const mat = foraging.creatures[0].affinity;
+    const base = forageRatePerSec(foraging, mat);
+    expect(base).toBeGreaterThan(0);
+    const boosted = { ...foraging, upgrades: { 'forage-tools': 2 } };
+    expect(forageRatePerSec(boosted, mat)).toBeCloseTo(base * 1.3);
+    expect(satchelCap(boosted)).toBeGreaterThan(satchelCap(foraging));
+    expect(Number.isInteger(satchelCap(boosted))).toBe(true);
   });
 });
