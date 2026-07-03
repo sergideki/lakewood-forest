@@ -6,6 +6,8 @@ and come back to loot. No ads, no gacha, no leaderboards. Actually slow.
 
 Built with React Native + Expo. Fully offline, single-player, local save.
 
+**📲 Play it:** grab the Android APK from [Releases](https://github.com/sergideki/lakewood-forest/releases/latest) (sideload — allow "unknown sources" when prompted).
+
 ## What you do
 
 - **Farm** — plant crops, assign your family; the barn fills on real wall-clock time, tap Collect.
