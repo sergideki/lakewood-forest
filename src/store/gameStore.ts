@@ -11,6 +11,8 @@ import {
   startRun,
   collectRun,
   collectSatchel,
+  purchaseUpgrade,
+  buyTreat,
 } from '../engine';
 import { serialize, deserialize } from '../persistence/save';
 
@@ -29,6 +31,8 @@ interface GameStore {
   startDungeon: (dungeonId: string, creatureIds: string[]) => void;
   collectDungeon: (dungeonId: string) => void;
   collectForage: () => void;
+  purchase: (upgradeId: string) => void;
+  feedTreat: (creatureId: string) => void;
   dismissDiscovery: () => void;
   save: () => void;
 }
@@ -91,6 +95,10 @@ export const useGameStore = create<GameStore>((set, get) => {
       const caught = applyElapsed(get().state, Date.now());
       commitWithDiscovery(caught, collectSatchel(caught, Math.random));
     },
+
+    purchase: (upgradeId) => commit(purchaseUpgrade(applyElapsed(get().state, Date.now()), upgradeId)),
+
+    feedTreat: (creatureId) => commit(buyTreat(applyElapsed(get().state, Date.now()), creatureId)),
 
     dismissDiscovery: () => set({ lastDiscovery: null }),
 
