@@ -11,6 +11,8 @@ import {
   startRun,
   collectRun,
   collectSatchel,
+  purchaseUpgrade,
+  buyTreat,
 } from '../engine';
 import { serialize, deserialize } from '../persistence/save';
 
@@ -29,6 +31,8 @@ interface GameStore {
   startDungeon: (dungeonId: string, creatureIds: string[]) => void;
   collectDungeon: (dungeonId: string) => void;
   collectForage: () => void;
+  purchase: (upgradeId: string) => void;
+  feedTreat: (creatureId: string) => void;
   dismissDiscovery: () => void;
   save: () => void;
 }
@@ -44,12 +48,14 @@ function newlyDiscovered(prev: GameState, next: GameState): SpeciesId | null {
 }
 
 export const useGameStore = create<GameStore>((set, get) => {
-  const commit = (next: GameState) => { persist(next); set({ state: next }); };
+  // Never persist before load() has hydrated the store: a commit on the fresh
+  // initial state would overwrite the real save (deep link to /town, fast tap).
+  const commit = (next: GameState) => { if (get().loaded) persist(next); set({ state: next }); };
 
   /** Run a discovery-capable engine action, surfacing any new species for the toast. */
   const commitWithDiscovery = (prev: GameState, next: GameState) => {
     const found = newlyDiscovered(prev, next);
-    persist(next);
+    if (get().loaded) persist(next);
     set(found ? { state: next, lastDiscovery: found } : { state: next });
   };
 
@@ -92,8 +98,12 @@ export const useGameStore = create<GameStore>((set, get) => {
       commitWithDiscovery(caught, collectSatchel(caught, Math.random));
     },
 
+    purchase: (upgradeId) => commit(purchaseUpgrade(applyElapsed(get().state, Date.now()), upgradeId)),
+
+    feedTreat: (creatureId) => commit(buyTreat(applyElapsed(get().state, Date.now()), creatureId)),
+
     dismissDiscovery: () => set({ lastDiscovery: null }),
 
-    save: () => persist(get().state),
+    save: () => { if (get().loaded) persist(get().state); },
   };
 });

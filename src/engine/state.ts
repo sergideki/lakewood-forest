@@ -19,6 +19,7 @@ export function createInitialState(now: number): GameState {
     storage: { barn: { amount: 0 }, satchel: { wood: 0, acorn: 0 } },
     dungeons: DUNGEONS.map((d) => ({ id: d.id, activeRun: null })),
     discovered: [...STARTER_SPECIES],
+    upgrades: {},
     meta: { lastSeen: now },
   };
 }

@@ -1,22 +1,25 @@
 import type { GameState, Material, Rng } from './types';
 import { creatureForageOutput, rollDiscovery, teamPower, grantXp } from './creatures';
 import { getDungeon } from './content';
+import { satchelCapMult, forageMult } from './town';
 
 export const SATCHEL_HOURS = 24;
 export const SATCHEL_FLOOR = 200;
 export const FORAGE_DISCOVERY_CHANCE = 0.15;
 
-/** Items/sec produced for one material by all creatures foraging it. */
+/** Items/sec produced for one material by all creatures foraging it (upgrade-boosted). */
 export function forageRatePerSec(state: GameState, material: Material): number {
-  return state.creatures
+  const base = state.creatures
     .filter((c) => c.assignment.type === 'forage' && c.affinity === material)
     .reduce((sum, c) => sum + creatureForageOutput(c), 0);
+  return base * forageMult(state);
 }
 
-/** Combined satchel capacity = a day's worth of the current total forage rate, floored. */
+/** Combined satchel capacity = a day's worth of the current total forage rate, floored, then upgraded. */
 export function satchelCap(state: GameState): number {
   const perSec = forageRatePerSec(state, 'wood') + forageRatePerSec(state, 'acorn');
-  return Math.max(SATCHEL_FLOOR, Math.round(perSec * SATCHEL_HOURS * 3600));
+  const derived = Math.max(SATCHEL_FLOOR, Math.round(perSec * SATCHEL_HOURS * 3600));
+  return Math.round(derived * satchelCapMult(state));
 }
 
 /** Fill wood + acorn by their rates over `elapsedSec`, clamped so their sum <= cap. */

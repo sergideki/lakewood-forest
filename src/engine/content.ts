@@ -1,4 +1,4 @@
-import type { Crop, CropId, Species, SpeciesId, Dungeon } from './types';
+import type { Crop, CropId, Species, SpeciesId, Dungeon, TownUpgrade, UpgradeId } from './types';
 
 export const CROPS: Record<CropId, Crop> = {
   wheat:  { id: 'wheat',  name: 'Wheat',  emoji: '🌾', growSec: 100, gold: 5 },
@@ -32,3 +32,15 @@ export const DUNGEONS: Dungeon[] = [
 export function getDungeon(id: string): Dungeon | undefined {
   return DUNGEONS.find((d) => d.id === id);
 }
+
+export const UPGRADES: Record<UpgradeId, TownUpgrade> = {
+  'barn-silo':      { id: 'barn-silo',      name: 'Barn Silo',         emoji: '🏚️', description: '+50% barn capacity per level',    maxLevel: 5, baseCost: { gold: 40,  wood: 25 },   costGrowth: 1.8 },
+  'satchel-stitch': { id: 'satchel-stitch', name: 'Satchel Stitching', emoji: '🧵', description: '+50% satchel capacity per level', maxLevel: 5, baseCost: { gold: 40,  acorns: 20 }, costGrowth: 1.8 },
+  'forage-tools':   { id: 'forage-tools',   name: 'Forage Tools',      emoji: '🪓', description: '+15% forage rate per level',      maxLevel: 5, baseCost: { gold: 60,  wood: 30 },   costGrowth: 1.9 },
+  'farm-plot':      { id: 'farm-plot',      name: 'Farm Expansion',    emoji: '🚜', description: 'Clear land for a new crop plot',  maxLevel: 3, baseCost: { gold: 150, wood: 50 },   costGrowth: 2.5 },
+};
+
+export const UPGRADE_IDS: UpgradeId[] = Object.keys(UPGRADES);
+
+export const TREAT_COST_ACORNS = 25;
+export const TREAT_XP = 100;

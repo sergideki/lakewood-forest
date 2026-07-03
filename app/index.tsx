@@ -10,11 +10,8 @@ import { VillagerRow } from '../src/ui/components/VillagerRow';
 
 export default function Home() {
   const loaded = useGameStore((s) => s.loaded);
-  const load = useGameStore((s) => s.load);
   const tick = useGameStore((s) => s.tick);
   const save = useGameStore((s) => s.save);
-
-  useEffect(() => { load(); }, [load]);
 
   // Live barn fill while the app is open (visual), plus a hard catch-up on foreground.
   // Persistence happens on backgrounding, not every tick.
