@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { GameState, CropId, SpeciesId } from '../engine/types';
+import type { GameState, CropId, SpeciesId, PetId } from '../engine/types';
 import {
   createInitialState,
   plantCrop,
@@ -13,6 +13,9 @@ import {
   collectSatchel,
   purchaseUpgrade,
   buyTreat,
+  collectCreel,
+  buildHabitat,
+  collectHabitat,
 } from '../engine';
 import { serialize, deserialize } from '../persistence/save';
 
@@ -22,6 +25,7 @@ interface GameStore {
   state: GameState;
   loaded: boolean;
   lastDiscovery: SpeciesId | null;
+  lastCatch: PetId | null;
   load: () => Promise<void>;
   tick: (now: number) => void;
   plant: (plotId: string, cropId: CropId | null) => void;
@@ -33,6 +37,10 @@ interface GameStore {
   collectForage: () => void;
   purchase: (upgradeId: string) => void;
   feedTreat: (creatureId: string) => void;
+  collectFish: () => void;
+  buildHabitat: (habitatId: string) => void;
+  collectHabitat: (habitatId: string) => void;
+  dismissCatch: () => void;
   dismissDiscovery: () => void;
   save: () => void;
 }
@@ -44,6 +52,12 @@ function persist(state: GameState) {
 /** The species newly present in `next.discovered` but not in `prev.discovered`, if any. */
 function newlyDiscovered(prev: GameState, next: GameState): SpeciesId | null {
   const added = next.discovered.filter((id) => !prev.discovered.includes(id));
+  return added.length > 0 ? added[added.length - 1] : null;
+}
+
+/** The pet newly present in next.pets but not prev.pets, if any. */
+function newlyCaught(prev: GameState, next: GameState): PetId | null {
+  const added = next.pets.filter((id) => !prev.pets.includes(id));
   return added.length > 0 ? added[added.length - 1] : null;
 }
 
@@ -59,10 +73,18 @@ export const useGameStore = create<GameStore>((set, get) => {
     set(found ? { state: next, lastDiscovery: found } : { state: next });
   };
 
+  /** Run a catch-capable action (creel collect), surfacing a new pet for the catch toast. */
+  const commitWithCatch = (prev: GameState, next: GameState) => {
+    const caught = newlyCaught(prev, next);
+    if (get().loaded) persist(next);
+    set(caught ? { state: next, lastCatch: caught } : { state: next });
+  };
+
   return {
     state: createInitialState(Date.now()),
     loaded: false,
     lastDiscovery: null,
+    lastCatch: null,
 
     load: async () => {
       const raw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -101,6 +123,24 @@ export const useGameStore = create<GameStore>((set, get) => {
     purchase: (upgradeId) => commit(purchaseUpgrade(applyElapsed(get().state, Date.now()), upgradeId)),
 
     feedTreat: (creatureId) => commit(buyTreat(applyElapsed(get().state, Date.now()), creatureId)),
+
+    collectFish: () => {
+      const caught = applyElapsed(get().state, Date.now());
+      commitWithCatch(caught, collectCreel(caught, Math.random));
+    },
+
+    buildHabitat: (habitatId) => {
+      const now = Date.now();
+      commit(buildHabitat(applyElapsed(get().state, now), habitatId, now));
+    },
+
+    collectHabitat: (habitatId) => {
+      const now = Date.now();
+      const caught = applyElapsed(get().state, now);
+      commitWithDiscovery(caught, collectHabitat(caught, habitatId, now));
+    },
+
+    dismissCatch: () => set({ lastCatch: null }),
 
     dismissDiscovery: () => set({ lastDiscovery: null }),
 
