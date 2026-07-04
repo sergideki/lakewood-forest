@@ -1,12 +1,25 @@
 export type CropId = string;
 
-export interface Crop {
+/** Resources a producer crop can bank (a subset of Resources keys — plural `acorns`). */
+export type BarnResource = 'gold' | 'wood' | 'acorns';
+
+interface CropBase {
   id: CropId;
   name: string;
   emoji: string;
-  growSec: number; // seconds for one full yield
-  gold: number;    // gold produced per yield cycle
 }
+/** A crop that banks a resource into the barn over time. */
+export interface ProducerCrop extends CropBase {
+  kind: 'producer';
+  output: BarnResource;
+  amount: number;  // resource produced per yield cycle
+  growSec: number; // seconds for one full yield
+}
+/** A crop with no bankable output; its effect is applied where it is consumed (e.g. lake catch). */
+export interface ModifierCrop extends CropBase {
+  kind: 'modifier';
+}
+export type Crop = ProducerCrop | ModifierCrop;
 
 export interface Plot {
   id: string;
@@ -96,7 +109,7 @@ export interface Pet {
 }
 
 export interface Storage {
-  barn: { amount: number };
+  barn: { gold: number; wood: number; acorns: number };
   satchel: { wood: number; acorn: number };
   creel: { fish: number };
 }
@@ -127,6 +140,7 @@ export interface TownUpgrade {
 export interface GameState {
   resources: Resources;
   plots: Plot[];
+  unlockedCrops: CropId[]; // crop ids the player may plant; wheat is always seeded here
   villagers: Villager[];
   creatures: Creature[];
   storage: Storage;
