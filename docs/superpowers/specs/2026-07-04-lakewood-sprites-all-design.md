@@ -69,14 +69,17 @@ Descriptor set (silhouette + palette anchors):
 
 File layout: `assets/creatures/<speciesId>.png` (water 4 — same folder/convention as
 forest 10), `assets/pets/<petId>.png`, `assets/crops/<cropId>.png`,
-`assets/villagers/<pip|nan|rowan>.png`.
+`assets/villagers/<villagerId>.png` (i.e. `vil-1.png`/`vil-2.png`/`vil-3.png` — key =
+filename holds mechanically for every registry; villager ids are the stable identifier,
+sourced from `createInitialState()` in the pure engine).
 
 ## 4. Code changes (UI layer only)
 
 1. **`src/ui/components/SpriteIcon.tsx` (new, generic):**
    `SpriteIcon({ sprite?: ImageSourcePropType, emoji: string, size: number })` —
-   `<Image>` when `sprite` given, else emoji `<Text>`. Exactly CreatureIcon's logic with
-   the lookup hoisted to the caller. `CreatureIcon` **stays untouched** (shipped path).
+   `<Image>` when `sprite` given, else emoji `<Text>`. `CreatureIcon`'s public API stays
+   identical, but its body becomes a one-line delegation to `SpriteIcon` (skeptic
+   finding: two hand-copied branch components would drift; one render path).
 2. **`src/ui/sprites.ts`:** add 4 water lines to `CREATURE_SPRITES`; add
    `PET_SPRITES: Partial<Record<PetId, ...>>`,
    `CROP_SPRITES: Partial<Record<CropId, ...>>`,
@@ -88,20 +91,28 @@ forest 10), `assets/pets/<petId>.png`, `assets/crops/<cropId>.png`,
 | File | Site | Now | Becomes |
 |---|---|---|---|
 | FriendsJournal.tsx | caught-pet cell | `<Text>{pet.emoji}` | `SpriteIcon sprite={PET_SPRITES[id]} size={48}` (parity with creature cells) |
-| CatchToast.tsx | pet reveal | `<Text style={icon}>` | `SpriteIcon` at the icon's current fontSize |
+| CatchToast.tsx | pet reveal | `<Text style={icon}>` (fontSize 56, lineHeight 64, marginVertical 8) | `SpriteIcon` 56 wrapped to preserve the 64px line box + margin (skeptic: size ≠ fontSize here) |
 | PlotGrid.tsx | plot cell | `{crop.emoji}` 24px | `SpriteIcon` 24 (➕ empty stays Text) |
 | PlotGrid.tsx | picker unlocked row | `{c.emoji}` 22px | `SpriteIcon` 22 |
-| PlotGrid.tsx | picker locked row | `{c.emoji} {c.name}` inline | `SpriteIcon` 18 + `<Text>{c.name}` (🔒 stays) |
+| PlotGrid.tsx | picker locked row | `{c.emoji} {c.name}` inline | insert `SpriteIcon` 18 as a new *sibling* before `cropName`; `cropName` keeps `flex:1` and renders name only (🔒 stays; no wrapper — parent is already `flexDirection:'row'`) |
 | VillagerRow.tsx | family chip | `{v.emoji}` 22px | `SpriteIcon sprite={VILLAGER_SPRITES[v.id]}` 22 |
 
 Undiscovered/locked journal cells keep ❔ (no info leak — unchanged behavior).
 
 ## 5. Testing & QA
 
-- **New vitest (node, fs-only): `test/sprite-assets.test.ts`** — for every SpeciesId,
-  PetId, CropId and villager id, assert the expected PNG exists on disk and is 64×64
-  (PNG header width/height bytes — no image lib needed). Guards the Metro
-  missing-require trap without importing RN code. Does NOT import `src/ui/sprites.ts`.
+- **New vitest (node, fs-only): `test/sprite-assets.test.ts`** — never imports
+  `src/ui/sprites.ts` (it require()s PNGs) or react-native. Three checks:
+  1. *Mandatory presence:* every water SpeciesId, PetId and CropId has its PNG on disk,
+     64×64 (PNG header bytes — no image lib). Villagers are **conditional**: if
+     `assets/villagers/<id>.png` exists it must be 64×64, but absence is allowed (the
+     spec's own drop-path must not red the suite — skeptic CRITICAL).
+  2. *Registry↔disk:* text-parse `src/ui/sprites.ts` for `require('../../assets/…')`
+     paths and assert each file exists — the Metro bundle-break guard.
+  3. *Key membership:* every registry key parsed from the source is a member of the
+     engine id lists (`SPECIES`/`PET_IDS`/`CROP_IDS`/villager ids via
+     `createInitialState()` — all pure imports). Ids are plain `string` types, so tsc
+     catches nothing here (skeptic MAJOR: a typo'd key silently mis-renders).
 - `npx tsc --noEmit` clean; existing 137 tests hold (engine untouched).
 - **Live browser QA** (mandatory — component tests don't exist; zustand-v5 mount trap):
   drive /lake (habitat → water-creature reveal toast + roster), /friends (pets grid +
