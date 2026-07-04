@@ -251,3 +251,27 @@ describe('accrueMarigold', () => {
     expect(accrueMarigold(s, 0)).toBe(s);
   });
 });
+
+describe('collectCreel marigold dormancy (integrated)', () => {
+  // base CATCH_CHANCE=0.25; 3 marigolds boost to 0.40 while the pond has fish.
+  // A mid rng of 0.30 catches ONLY when boosted (0.30<0.40) and misses when dormant (0.30>=0.25).
+  const midRng = () => 0.30;
+  const threeMarigolds = (fish: number) => {
+    const base = createInitialState(0);
+    const plots = [
+      ...base.plots,
+      { id: 'm-0', crop: 'marigold' as const },
+      { id: 'm-1', crop: 'marigold' as const },
+      { id: 'm-2', crop: 'marigold' as const },
+    ];
+    return { ...base, plots, resources: { ...base.resources, fish }, storage: { ...base.storage, creel: { fish: 5 } } };
+  };
+
+  it('rolls at the boosted chance when the pond has fish before collecting', () => {
+    expect(collectCreel(threeMarigolds(10), midRng).pets.length).toBe(1);
+  });
+
+  it('is dormant (base chance) when the pond was dry, even though the collect banks fresh fish', () => {
+    expect(collectCreel(threeMarigolds(0), midRng).pets.length).toBe(0);
+  });
+});

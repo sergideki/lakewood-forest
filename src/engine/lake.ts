@@ -89,7 +89,9 @@ export function collectCreel(state: GameState, rng: Rng): GameState {
     resources: { ...state.resources, fish: state.resources.fish + bankFish },
     storage: { ...state.storage, creel: { fish: state.storage.creel.fish - bankFish } },
   };
-  return rollCatch(banked, creelCatchChance(banked), rng);
+  // Chance is measured on the PRE-bank state: marigolds are dormant when the pond (resources.fish)
+  // is dry, so a collect after the pond drained rolls at base — the just-banked fish don't revive it.
+  return rollCatch(banked, creelCatchChance(state), rng);
 }
 
 export type HabitatStatus = 'unbuilt' | 'attracting' | 'ready' | 'done';
