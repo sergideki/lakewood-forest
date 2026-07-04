@@ -9,7 +9,8 @@ export function ResourceBar() {
       <Text style={styles.item}>🪙 {r.gold}</Text>
       <Text style={styles.item}>🪵 {r.wood}</Text>
       <Text style={styles.item}>🌰 {r.acorns}</Text>
-      <Text style={styles.item}>🐟 {r.fish}</Text>
+      {/* fish is fractional internally (marigold drain accumulates in the decimals) — display whole fish only, same as CreelCard */}
+      <Text style={styles.item}>🐟 {Math.floor(r.fish)}</Text>
     </View>
   );
 }
