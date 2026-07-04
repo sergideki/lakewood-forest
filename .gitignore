@@ -7,3 +7,4 @@ dist/
 .gstack/
 .claude/settings.json
 android/
+*.idsig
