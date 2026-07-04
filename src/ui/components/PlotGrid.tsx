@@ -3,8 +3,8 @@ import { View, Text, Pressable, Modal, ScrollView, StyleSheet } from 'react-nati
 import { theme } from '../theme';
 import { cards } from '../styles';
 import { useGameStore } from '../../store/gameStore';
-import { CROPS, CROP_IDS } from '../../engine';
-import type { CropId } from '../../engine';
+import { CROPS, CROP_IDS, CROP_UNLOCK_COST } from '../../engine';
+import type { CropId, Resources } from '../../engine';
 
 function fmt(sec: number): string {
   if (sec < 60) return `${sec}s`;
@@ -18,6 +18,20 @@ export function PlotGrid() {
   const plant = useGameStore((s) => s.plant);
   // Which plot's crop picker is open (plot id), or null when closed.
   const [picking, setPicking] = useState<string | null>(null);
+  const unlocked = useGameStore((s) => s.state.unlockedCrops);
+  const resources = useGameStore((s) => s.state.resources);
+  const unlock = useGameStore((s) => s.unlockCrop);
+
+  const canAfford = (cropId: CropId) => {
+    const cost = CROP_UNLOCK_COST[cropId];
+    if (!cost) return false;
+    return (Object.keys(cost) as (keyof Resources)[]).every((k) => resources[k] >= (cost[k] ?? 0));
+  };
+  const costLabel = (cropId: CropId) => {
+    const cost = CROP_UNLOCK_COST[cropId] ?? {};
+    const glyph: Record<string, string> = { gold: '🪙', wood: '🪵', acorns: '🌰', fish: '🐟' };
+    return (Object.keys(cost) as (keyof Resources)[]).map((k) => `${cost[k]}${glyph[k]}`).join(' ');
+  };
 
   const choose = (cropId: CropId | null) => {
     if (picking) plant(picking, cropId);
@@ -56,11 +70,30 @@ export function PlotGrid() {
             <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
               {CROP_IDS.map((id) => {
                 const c = CROPS[id];
+                const isUnlocked = unlocked.includes(id);
+                const meta = c.kind === 'producer'
+                  ? `${fmt(c.growSec)} · ${c.amount}${c.output === 'gold' ? 'g' : c.output === 'wood' ? '🪵' : '🌰'}`
+                  : 'pet luck · drains 🐟';
+                if (isUnlocked) {
+                  return (
+                    <Pressable key={id} style={styles.cropRow} onPress={() => choose(id)}>
+                      <Text style={styles.cropEmoji}>{c.emoji}</Text>
+                      <Text style={styles.cropName}>{c.name}</Text>
+                      <Text style={styles.cropMeta}>{meta}</Text>
+                    </Pressable>
+                  );
+                }
+                const affordable = canAfford(id);
                 return (
-                  <Pressable key={id} style={styles.cropRow} onPress={() => choose(id)}>
-                    <Text style={styles.cropEmoji}>{c.emoji}</Text>
-                    <Text style={styles.cropName}>{c.name}</Text>
-                    <Text style={styles.cropMeta}>{fmt(c.growSec)} · {c.gold}g</Text>
+                  <Pressable
+                    key={id}
+                    style={[styles.cropRow, styles.lockedRow, !affordable && styles.btnDisabled]}
+                    disabled={!affordable}
+                    onPress={() => { unlock(id); }}
+                  >
+                    <Text style={styles.cropEmoji}>🔒</Text>
+                    <Text style={styles.cropName}>{c.emoji} {c.name}</Text>
+                    <Text style={styles.cropMeta}>unlock {costLabel(id)}</Text>
                   </Pressable>
                 );
               })}
@@ -96,4 +129,6 @@ const styles = StyleSheet.create({
   cropMeta: { color: theme.textDim, fontSize: 12 },
   clearRow: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.cardBorder },
   clearName: { color: theme.textDim },
+  lockedRow: { borderWidth: 1, borderColor: theme.accent },
+  btnDisabled: { opacity: 0.4 },
 });
