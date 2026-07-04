@@ -199,3 +199,55 @@ describe('rollDiscovery excludes water creatures (directed-only)', () => {
   });
 });
 
+
+import { accrueMarigold, creelCatchChance } from '../../src/engine';
+import { CATCH_CHANCE, MARIGOLD_CATCH_CAP } from '../../src/engine';
+
+function withMarigolds(n: number, fish: number) {
+  const base = createInitialState(0);
+  const plots = Array.from({ length: n }, (_, i) => ({ id: `m-${i}`, crop: 'marigold' as const }));
+  return {
+    ...base,
+    unlockedCrops: ['wheat', 'marigold'],
+    plots: [...base.plots, ...plots],
+    resources: { ...base.resources, fish },
+  };
+}
+
+describe('marigold catch bonus', () => {
+  it('is base CATCH_CHANCE with zero marigolds', () => {
+    expect(creelCatchChance(createInitialState(0))).toBeCloseTo(CATCH_CHANCE, 5);
+  });
+
+  it('adds 0.05 per planted marigold while fish remain', () => {
+    expect(creelCatchChance(withMarigolds(2, 100))).toBeCloseTo(CATCH_CHANCE + 0.10, 5);
+  });
+
+  it('clamps at MARIGOLD_CATCH_CAP', () => {
+    expect(creelCatchChance(withMarigolds(8, 100))).toBe(MARIGOLD_CATCH_CAP);
+  });
+
+  it('is dormant (base chance) when the pond is dry', () => {
+    expect(creelCatchChance(withMarigolds(3, 0))).toBeCloseTo(CATCH_CHANCE, 5);
+  });
+});
+
+describe('accrueMarigold', () => {
+  it('drains fish over time per planted marigold', () => {
+    const s = withMarigolds(2, 100); // 2 * 0.02 = 0.04 fish/s
+    const after = accrueMarigold(s, 100); // 4 fish
+    expect(after.resources.fish).toBeCloseTo(96, 5);
+  });
+
+  it('clamps fish at zero, never negative', () => {
+    const s = withMarigolds(2, 1);
+    expect(accrueMarigold(s, 10_000).resources.fish).toBe(0);
+  });
+
+  it('is a no-op with no marigolds or non-positive elapsed', () => {
+    const none = createInitialState(0);
+    expect(accrueMarigold(none, 100)).toBe(none);
+    const s = withMarigolds(1, 50);
+    expect(accrueMarigold(s, 0)).toBe(s);
+  });
+});

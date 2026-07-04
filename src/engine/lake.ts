@@ -1,5 +1,16 @@
 import type { GameState, Rng } from './types';
-import { PETS, PET_IDS, BASE_ROD_RATE, CREEL_HOURS, CREEL_FLOOR, CATCH_CHANCE, getHabitat } from './content';
+import {
+  PETS,
+  PET_IDS,
+  BASE_ROD_RATE,
+  CREEL_HOURS,
+  CREEL_FLOOR,
+  CATCH_CHANCE,
+  getHabitat,
+  MARIGOLD_CATCH_BONUS,
+  MARIGOLD_CATCH_CAP,
+  MARIGOLD_FISH_PER_SEC,
+} from './content';
 import { DISCOVERY_WEIGHT, makeCreature } from './creatures';
 import { forageRatePerSec } from './forest';
 
@@ -43,6 +54,29 @@ export function rollCatch(state: GameState, chance: number, rng: Rng): GameState
   return { ...state, pets: [...state.pets, picked.id] };
 }
 
+/** Number of plots currently planted with marigold. */
+function marigoldCount(state: GameState): number {
+  return state.plots.filter((p) => p.crop === 'marigold').length;
+}
+
+/** Effective pet catch chance: base + marigold bonus (only while fish remain), clamped. */
+export function creelCatchChance(state: GameState): number {
+  const n = marigoldCount(state);
+  if (n === 0 || state.resources.fish <= 0) return CATCH_CHANCE;
+  return Math.min(CATCH_CHANCE + MARIGOLD_CATCH_BONUS * n, MARIGOLD_CATCH_CAP);
+}
+
+/** Drain fish for planted marigolds over elapsedSec, clamped at 0. Immutable. No-op if none/≤0. */
+export function accrueMarigold(state: GameState, elapsedSec: number): GameState {
+  if (elapsedSec <= 0) return state;
+  const n = marigoldCount(state);
+  if (n === 0) return state;
+  const drain = MARIGOLD_FISH_PER_SEC * n * elapsedSec;
+  const fish = Math.max(0, state.resources.fish - drain);
+  if (fish === state.resources.fish) return state;
+  return { ...state, resources: { ...state.resources, fish } };
+}
+
 /**
  * Bank whole fish into resources, carry the fractional remainder, then roll a pet catch.
  * An EMPTY creel banks nothing and NEVER rolls (no free pets).
@@ -55,7 +89,7 @@ export function collectCreel(state: GameState, rng: Rng): GameState {
     resources: { ...state.resources, fish: state.resources.fish + bankFish },
     storage: { ...state.storage, creel: { fish: state.storage.creel.fish - bankFish } },
   };
-  return rollCatch(banked, CATCH_CHANCE, rng);
+  return rollCatch(banked, creelCatchChance(banked), rng);
 }
 
 export type HabitatStatus = 'unbuilt' | 'attracting' | 'ready' | 'done';
