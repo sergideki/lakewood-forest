@@ -1,5 +1,5 @@
-import type { GameState, Resources, UpgradeId } from './types';
-import { UPGRADES, TREAT_COST_ACORNS, TREAT_XP } from './content';
+import type { GameState, Resources, UpgradeId, CropId } from './types';
+import { UPGRADES, TREAT_COST_ACORNS, TREAT_XP, CROPS, CROP_UNLOCK_COST } from './content';
 import { grantXp } from './creatures';
 
 /** Owned level of an upgrade; tolerates pre-v3 states with no `upgrades` field. */
@@ -71,4 +71,34 @@ export function satchelCapMult(state: GameState): number {
 
 export function forageMult(state: GameState): number {
   return 1 + 0.15 * upgradeLevel(state, 'forage-tools');
+}
+
+/** True if the crop exists, isn't already unlocked, and every resource component is affordable. */
+export function canUnlockCrop(state: GameState, cropId: CropId): boolean {
+  if (!CROPS[cropId] || state.unlockedCrops.includes(cropId)) return false;
+  const cost = CROP_UNLOCK_COST[cropId];
+  if (!cost) return false;
+  const r = state.resources;
+  return (
+    r.gold >= (cost.gold ?? 0) &&
+    r.wood >= (cost.wood ?? 0) &&
+    r.acorns >= (cost.acorns ?? 0) &&
+    r.fish >= (cost.fish ?? 0)
+  );
+}
+
+/** Pay the unlock cost + append to unlockedCrops. No-op (same ref) if unknown/owned/unaffordable. */
+export function unlockCrop(state: GameState, cropId: CropId): GameState {
+  if (!canUnlockCrop(state, cropId)) return state;
+  const cost = CROP_UNLOCK_COST[cropId];
+  return {
+    ...state,
+    resources: {
+      gold: state.resources.gold - (cost.gold ?? 0),
+      wood: state.resources.wood - (cost.wood ?? 0),
+      acorns: state.resources.acorns - (cost.acorns ?? 0),
+      fish: state.resources.fish - (cost.fish ?? 0),
+    },
+    unlockedCrops: [...state.unlockedCrops, cropId],
+  };
 }
