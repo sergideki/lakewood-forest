@@ -14,6 +14,7 @@ villagers} to scripts/contact-sheet.png (dark bg, nearest x3) for QA.
 Never writes over the 10 shipped forest PNGs — the draw maps below only
 contain the new ids.
 """
+import math
 import sys
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter
@@ -470,7 +471,6 @@ def draw_marigold():
     d.ellipse([268, 352, 356, 408], fill=band(G, 1))
     d.line([272, 386, 344, 372], fill=band(G, 2), width=9)
     # layered bloom: outer petal ring
-    import math
     for a in range(8):
         th = a * math.pi / 4 + math.pi / 8
         px0 = 256 + 96 * math.cos(th)

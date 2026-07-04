@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { PET_IDS, CROP_IDS, createInitialState } from '../src/engine';
+import { PET_IDS, CROP_IDS, SPECIES, createInitialState } from '../src/engine';
 
 const ROOT = join(__dirname, '..');
 
@@ -47,8 +47,7 @@ describe('sprite assets', () => {
       /^\s*'?([\w-]+)'?:\s*require\('\.\.\/\.\.\/(assets\/[\w-]+\/[\w-]+\.png)'\)/gm,
     );
     const known = new Set([
-      ...WATER_SPECIES,
-      ...['fernling','pebblepup','mossmouse','barkbug','hedgehush','cedarcat','lumifox','owlin','stagheart','emberkit'],
+      ...Object.keys(SPECIES), // all creatures, land + water — derived, never stale
       ...PET_IDS, ...CROP_IDS, ...VILLAGER_IDS,
     ]);
     let count = 0;
@@ -57,6 +56,10 @@ describe('sprite assets', () => {
       expect(existsSync(join(ROOT, rel)), `${rel} referenced but missing`).toBe(true);
       expect(known.has(key), `registry key '${key}' is not a known id`).toBe(true);
     }
+    // A mis-formatted entry (e.g. double-quoted path) would silently skip the
+    // regex — assert every require() in the file was actually parsed.
+    const requireCount = active.filter((l) => /:\s*require\(/.test(l)).length;
+    expect(count, 'a registry require() line did not match the parser regex').toBe(requireCount);
     expect(count).toBeGreaterThanOrEqual(10); // forest 10 minimum — regex must actually match
   });
 });
