@@ -12,7 +12,7 @@ function pngSize(path: string): { w: number; h: number } {
 }
 
 const WATER_SPECIES = ['ripplefrog', 'puddleduck', 'koisprite', 'mistleotter'];
-const VILLAGER_IDS = createInitialState().villagers.map((v) => v.id);
+const VILLAGER_IDS = createInitialState(0).villagers.map((v) => v.id);
 
 describe('sprite assets', () => {
   // 1 — mandatory presence + size. Villagers are CONDITIONAL (spec drop-path):

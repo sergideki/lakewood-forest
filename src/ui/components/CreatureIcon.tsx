@@ -1,6 +1,6 @@
-import { Image, Text } from 'react-native';
 import type { SpeciesId } from '../../engine/types';
 import { CREATURE_SPRITES } from '../sprites';
+import { SpriteIcon } from './SpriteIcon';
 
 type Props = {
   speciesId: SpeciesId;
@@ -13,9 +13,5 @@ type Props = {
  * registered for this species; otherwise falls back to the emoji at the same size.
  */
 export function CreatureIcon({ speciesId, emoji, size }: Props) {
-  const sprite = CREATURE_SPRITES[speciesId];
-  if (sprite) {
-    return <Image source={sprite} style={{ width: size, height: size }} resizeMode="contain" />;
-  }
-  return <Text style={{ fontSize: size }}>{emoji}</Text>;
+  return <SpriteIcon sprite={CREATURE_SPRITES[speciesId]} emoji={emoji} size={size} />;
 }
