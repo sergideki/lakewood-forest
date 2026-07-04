@@ -290,12 +290,12 @@ def draw_waterbeetle():
 def draw_dragonfly():
     img, d = canvas()
     T = (86, 158, 148)
-    W = (202, 214, 216)
-    # four pale wings, dithered for translucency
-    for wx0, wy0, wx1, wy1 in ((36, 168, 232, 260), (280, 168, 476, 260),
-                               (70, 268, 236, 344), (276, 268, 442, 344)):
+    W = (184, 200, 206)
+    # four pale wings, dithered for translucency — clear gap between pairs
+    for wx0, wy0, wx1, wy1 in ((56, 152, 218, 220), (294, 152, 456, 220),
+                               (92, 244, 226, 302), (286, 244, 420, 302)):
         d.ellipse([wx0, wy0, wx1, wy1], fill=band(W, 1))
-        checker(d, [wx0 + 10, wy0 + 8, wx1 - 10, wy1 - 8], band(W, 't'))
+        checker(d, [wx0 + 10, wy0 + 8, wx1 - 10, wy1 - 8], (150, 168, 178, 255))
     # slim segmented abdomen
     d.rounded_rectangle([226, 258, 288, 446], radius=30, fill=band(T, 1))
     for sy in (312, 358, 404):
@@ -328,9 +328,9 @@ def draw_pebbleturtle():
         d.chord([px0 - pr, py0 - pr, px0 + pr, py0 + pr], 195, 345,
                 fill=band(P, 0))
     # head peeking below
-    d.ellipse([206, 316, 306, 428], fill=band(G, 0))
-    eyes(d, 256, 362, 26, 24)
-    smile(d, 256, 404, 34)
+    d.ellipse([194, 302, 318, 434], fill=band(G, 0))
+    eyes(d, 256, 358, 35, 26)
+    smile(d, 256, 406, 38)
     return outline(img)
 
 
@@ -363,14 +363,14 @@ def draw_crawdad():
 def draw_pondnewt():
     img, d = canvas()
     N = (98, 112, 64)
-    O = (212, 128, 56)
-    # curled tail on the right
-    d.arc([300, 230, 470, 400], 250, 140, fill=band(N, 1), width=34)
-    d.ellipse([414, 222, 462, 268], fill=band(N, 1))
+    O = (198, 122, 60)
+    # curled tail on the right: thick curl + inner spiral dot
+    d.arc([326, 248, 468, 390], 235, 140, fill=band(N, 1), width=36)
+    d.ellipse([376, 296, 420, 340], fill=band(N, 1))
     body(d, [116, 156, 366, 418], N)
     # bright orange belly
     d.chord([136, 250, 346, 414], 10, 170, fill=band(O, 1))
-    checker(d, [166, 300, 318, 404], band(O, 0))
+    checker(d, [166, 300, 318, 404], band(O, 't'))
     eyes(d, 240, 224, 62, 38, iris=(70, 52, 34, 255))
     smile(d, 240, 300, 50)
     feet(d, 240, 414, 72, N, w=56, h=34)
