@@ -19,7 +19,8 @@ describe('tryDeserialize (strict import)', () => {
 
 describe('serialize / deserialize', () => {
   it('round-trips a game state', () => {
-    const s0 = plantCrop(createInitialState(1234), 'plot-1', 'berry');
+    const base = createInitialState(1234);
+    const s0 = plantCrop({ ...base, unlockedCrops: ['wheat', 'carrot'] }, 'plot-1', 'carrot');
     const restored = deserialize(serialize(s0));
     expect(restored).toEqual(s0);
   });
@@ -32,13 +33,13 @@ describe('serialize / deserialize', () => {
   it('returns a fresh state (not throwing) when the blob is corrupt', () => {
     const restored = deserialize('{ not valid json');
     expect(restored.plots).toHaveLength(3);
-    expect(restored.storage.barn.amount).toBe(0);
+    expect(restored.storage.barn).toEqual({ gold: 0, wood: 0, acorns: 0 });
   });
 
   it('returns a fresh state when the envelope is valid JSON but the state shape is wrong', () => {
     const restored = deserialize('{"version":1,"state":{}}');
     expect(restored.plots).toHaveLength(3);
-    expect(restored.storage.barn.amount).toBe(0);
+    expect(restored.storage.barn).toEqual({ gold: 0, wood: 0, acorns: 0 });
   });
 });
 
@@ -59,7 +60,7 @@ describe('v1 -> v2 migration', () => {
     expect(s.resources.gold).toBe(123);          // preserved
     expect(s.resources.wood).toBe(0);            // added
     expect(s.resources.acorns).toBe(0);
-    expect(s.storage.barn.amount).toBe(40);      // preserved
+    expect(s.storage.barn).toEqual({ gold: 40, wood: 0, acorns: 0 }); // amount preserved as gold bucket
     expect(s.storage.satchel).toEqual({ wood: 0, acorn: 0 });
     expect(s.creatures.map((c) => c.species).sort()).toEqual(['fernling', 'pebblepup']);
     expect(s.dungeons.map((d) => d.id)).toEqual(['hollow', 'grove', 'deep']);
@@ -67,9 +68,9 @@ describe('v1 -> v2 migration', () => {
   });
 
   it('leaves a current save untouched', () => {
-    const v2 = serialize(plantCrop(createInitialState(1), 'plot-1', 'berry'));
+    const v2 = serialize(createInitialState(1));
     expect(JSON.parse(v2).version).toBe(SAVE_VERSION);
-    expect(SAVE_VERSION).toBe(4);
+    expect(SAVE_VERSION).toBe(5);
     const restored = deserialize(v2);
     expect(restored.creatures).toHaveLength(2);
     expect(Object.keys(SPECIES).length).toBeGreaterThanOrEqual(10);
@@ -153,5 +154,51 @@ describe('v3 -> v4 migration', () => {
     const round = deserialize(serialize(s0));
     expect(round.resources.fish).toBe(42);
     expect(round.pets).toEqual(['pondsnail']);
+  });
+});
+
+describe('v4 -> v5 migration (crop rework)', () => {
+  it('maps barn.amount to the gold bucket, seeds unlockedCrops, clears removed crop ids', () => {
+    const v4Envelope = JSON.stringify({
+      version: 4,
+      state: {
+        resources: { gold: 5, wood: 0, acorns: 0, fish: 2 },
+        plots: [
+          { id: 'plot-1', crop: 'berry' },  // removed id → cleared
+          { id: 'plot-2', crop: 'wheat' },  // valid → kept + unlocked
+          { id: 'plot-3', crop: null },
+        ],
+        villagers: [{ id: 'vil-1', name: 'Pip', emoji: '🧑‍🌾', assignedTo: 'farm' }],
+        storage: { barn: { amount: 40 }, satchel: { wood: 0, acorn: 0 }, creel: { fish: 0 } },
+        creatures: [], dungeons: [], discovered: [], upgrades: {}, habitats: [], pets: [],
+        meta: { lastSeen: 9 },
+      },
+    });
+    const s = deserialize(v4Envelope);
+    expect(s.storage.barn).toEqual({ gold: 40, wood: 0, acorns: 0 });
+    expect(s.plots.find((p) => p.id === 'plot-1')!.crop).toBeNull(); // berry cleared
+    expect(s.plots.find((p) => p.id === 'plot-2')!.crop).toBe('wheat');
+    expect(s.unlockedCrops).toContain('wheat');
+    expect(s.unlockedCrops).not.toContain('berry');
+  });
+
+  it('a real v4 save survives BOTH deserialize and tryDeserialize (no silent wipe / no reject)', () => {
+    const v4 = JSON.stringify({
+      version: 4,
+      state: {
+        resources: { gold: 77, wood: 1, acorns: 2, fish: 3 },
+        plots: [{ id: 'plot-1', crop: null }, { id: 'plot-2', crop: null }, { id: 'plot-3', crop: null }],
+        villagers: [{ id: 'vil-1', name: 'Pip', emoji: '🧑‍🌾', assignedTo: null }],
+        storage: { barn: { amount: 12 }, satchel: { wood: 0, acorn: 0 }, creel: { fish: 0 } },
+        creatures: [], dungeons: [], discovered: [], upgrades: {}, habitats: [], pets: [],
+        meta: { lastSeen: 0 },
+      },
+    });
+    const viaLoad = deserialize(v4);
+    expect(viaLoad.resources.gold).toBe(77);          // NOT wiped to a fresh state
+    expect(viaLoad.storage.barn.gold).toBe(12);
+    const viaImport = tryDeserialize(v4);
+    expect(viaImport).not.toBeNull();                  // NOT rejected
+    expect(viaImport!.resources.gold).toBe(77);
   });
 });

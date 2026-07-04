@@ -1,8 +1,8 @@
 import type { GameState } from '../engine/types';
 import { createInitialState, makeCreature } from '../engine';
-import { DUNGEONS, STARTER_SPECIES, HABITATS } from '../engine/content';
+import { DUNGEONS, STARTER_SPECIES, HABITATS, CROP_IDS, STARTER_CROPS } from '../engine/content';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 interface SaveEnvelope {
   version: number;
@@ -47,26 +47,29 @@ export function tryDeserialize(json: string): GameState | null {
   }
 }
 
-/** Validates the fields common to every version. Forest fields are backfilled by migrate(). */
+/** Validates fields common to every version. Runs PRE-migration, so it must accept old shapes:
+ *  a v4 save has storage.barn = {amount}; do NOT assert the new bucket shape or unlockedCrops
+ *  (migrate() backfills those). Asserting the new shape here would fail every real v4 save and
+ *  silently wipe it. */
 function isValidBaseState(state: unknown): state is GameState {
   if (!state || typeof state !== 'object') return false;
   const s = state as Record<string, unknown>;
   if (!Array.isArray(s.plots) || !Array.isArray(s.villagers)) return false;
   if (!s.resources || typeof s.resources !== 'object') return false;
   if (!s.meta || typeof s.meta !== 'object') return false;
-  const storage = s.storage as { barn?: { amount?: unknown } } | undefined;
+  const storage = s.storage as { barn?: unknown } | undefined;
   if (!storage || typeof storage !== 'object') return false;
-  if (!storage.barn || typeof storage.barn !== 'object') return false;
-  if (typeof storage.barn.amount !== 'number') return false;
+  if (!storage.barn || typeof storage.barn !== 'object') return false; // shape checked by migrate
   return true;
 }
 
-/** Additive migrations. v1 (farm) -> v2 (forest) -> v3 (town) -> v4 (lake). Idempotent. */
+/** Additive migrations. v1(farm)->v2(forest)->v3(town)->v4(lake)->v5(crops). Idempotent. */
 function migrate(fromVersion: number, state: GameState): GameState {
   let s = state;
   if (fromVersion < 2) s = addForestFields(s);
   if (fromVersion < 3) s = { ...s, upgrades: s.upgrades ?? {} };
   if (fromVersion < 4) s = addLakeFields(s);
+  if (fromVersion < 5) s = addCropRework(s);
   return s;
 }
 
@@ -94,4 +97,22 @@ function addLakeFields(old: GameState): GameState {
     habitats: old.habitats ?? HABITATS.map((h) => ({ id: h.id, builtAt: null })),
     pets: old.pets ?? [],
   };
+}
+
+/** v4->v5: barn {amount} -> {gold,wood,acorns}; seed unlockedCrops; clear removed crop ids. */
+function addCropRework(old: GameState): GameState {
+  const oldBarn = old.storage.barn as unknown as { amount?: number; gold?: number; wood?: number; acorns?: number };
+  const barn = typeof oldBarn.amount === 'number'
+    ? { gold: oldBarn.amount, wood: 0, acorns: 0 }                 // old shape → gold bucket
+    : { gold: oldBarn.gold ?? 0, wood: oldBarn.wood ?? 0, acorns: oldBarn.acorns ?? 0 }; // already migrated
+
+  const validId = (id: string | null): id is string => id !== null && CROP_IDS.includes(id);
+  // Clear any plot holding a crop id that no longer exists in the roster.
+  const plots = old.plots.map((p) => (validId(p.crop) ? p : { ...p, crop: null }));
+  // Seed unlockedCrops with wheat + any still-valid planted crop (so planted crops stay usable).
+  const seeded = old.unlockedCrops ?? [...STARTER_CROPS];
+  const fromPlots = plots.map((p) => p.crop).filter(validId);
+  const unlockedCrops = Array.from(new Set([...seeded, ...STARTER_CROPS, ...fromPlots]));
+
+  return { ...old, storage: { ...old.storage, barn }, plots, unlockedCrops };
 }
