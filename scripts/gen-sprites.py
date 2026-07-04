@@ -383,25 +383,34 @@ def draw_wheat():
     img, d = canvas()
     G = (200, 164, 84)
     T = (150, 106, 62)
-    # 3 stalks fanning from the tie
-    for dx, top in ((-96, 150), (0, 108), (96, 150)):
-        d.line([256 + dx * 0.2, 360, 256 + dx, top + 96], fill=band(G, 2),
-               width=13)
-        # grain head: stacked kernel pairs
+    # three vertical grain heads, center taller
+    for dx, top in ((-84, 148), (0, 100), (84, 148)):
+        cx = 256 + dx
+        # stem from head down to the tie
+        d.line([cx, top + 120, 256 + dx * 0.25, 356], fill=band(G, 2), width=13)
+        # awn whiskers
+        d.line([cx - 18, top - 6, cx - 46, top - 58], fill=band(G, 0), width=9)
+        d.line([cx + 18, top - 6, cx + 46, top - 58], fill=band(G, 0), width=9)
+        # kernel column
         for i in range(4):
-            ky = top + i * 44
-            kx = 256 + dx * (0.55 + i * 0.15)
-            d.ellipse([kx - 34, ky - 26, kx + 34, ky + 26], fill=band(G, 1))
-            d.line([kx, ky - 22, kx, ky + 22], fill=band(G, 2), width=10)
-        d.ellipse([kx - 24, ky + 6, kx + 24, ky + 44], fill=band(G, 0))
-    # stem bundle below the tie
-    for dx in (-30, 0, 30):
-        d.line([256 + dx, 356, 256 + dx * 1.4, 452], fill=band(G, 2), width=14)
-        d.line([256 + dx, 356, 256 + dx * 1.4, 448], fill=band(G, 1), width=8)
+            ky = top + i * 38
+            w = 36 - i * 3
+            d.ellipse([cx - w, ky - 28, cx + w, ky + 28], fill=band(G, 1))
+        d.ellipse([cx - 26, top - 32, cx + 26, top + 16], fill=band(G, 0))
+        # chevron notches
+        for i in range(3):
+            ky = top + 22 + i * 38
+            d.line([cx - 24, ky, cx, ky + 16], fill=band(G, 2), width=9)
+            d.line([cx + 24, ky, cx, ky + 16], fill=band(G, 2), width=9)
+    # stems flaring below the tie
+    for dx in (-36, 0, 36):
+        d.line([256 + dx * 0.3, 360, 256 + dx, 452], fill=band(G, 2), width=14)
+        d.line([256 + dx * 0.3, 360, 256 + dx, 448], fill=band(G, 1), width=7)
     # tied band
-    d.rounded_rectangle([196, 330, 316, 378], radius=18, fill=band(T, 1))
-    d.line([222, 334, 210, 374], fill=band(T, 2), width=10)
-    d.line([290, 334, 302, 374], fill=band(T, 2), width=10)
+    d.rounded_rectangle([192, 328, 320, 380], radius=20, fill=band(T, 1))
+    d.chord([196, 350, 316, 384], 15, 165, fill=band(T, 2))
+    d.line([232, 332, 218, 376], fill=band(T, 2), width=10)
+    d.line([280, 332, 294, 376], fill=band(T, 2), width=10)
     return outline(img)
 
 
@@ -493,20 +502,20 @@ def bust(d, skin, shirt):
 def draw_vil_1():  # Pip — young farmer: straw hat, freckles, green shirt
     img, d = canvas()
     SKIN = (224, 182, 146)
-    HAT = (208, 178, 108)
+    HAT = (204, 164, 82)
     SHIRT = (110, 142, 92)
     bust(d, SKIN, SHIRT)
-    # straw hat: dome + wide brim
-    d.chord([176, 68, 336, 208], 180, 360, fill=band(HAT, 1))
-    checker(d, [190, 84, 322, 190], band(HAT, 't'))
-    d.ellipse([124, 138, 388, 202], fill=band(HAT, 1))
-    d.chord([128, 168, 384, 204], 15, 165, fill=band(HAT, 2))
-    dot_eyes(d, 256, 252, 48)
+    # straw hat: dome + wide brim + band
+    d.chord([172, 60, 340, 200], 180, 360, fill=band(HAT, 1))
+    checker(d, [186, 76, 326, 182], band(HAT, 't'))
+    d.rounded_rectangle([174, 158, 338, 192], radius=14, fill=band(HAT, 3))
+    d.ellipse([116, 140, 396, 204], fill=band(HAT, 1))
+    d.chord([120, 168, 392, 206], 15, 165, fill=band(HAT, 2))
+    dot_eyes(d, 256, 250, 48)
     # freckles
-    for fx, fy in ((186, 286), (208, 298), (306, 298), (328, 286)):
+    for fx, fy in ((184, 278), (206, 290), (306, 290), (328, 278)):
         d.ellipse([fx - 9, fy - 8, fx + 9, fy + 8], fill=band(SKIN, 2))
-    smile(d, 256, 282, 44)
-    blush(d, 256, 292, 92, w=26, h=16)
+    smile(d, 256, 286, 40)
     return outline(img)
 
 
@@ -544,16 +553,16 @@ def draw_vil_3():  # Rowan — brown beard, tousled hair, mustard tunic
     d.line([256, 350, 216, 420], fill=band(TUNIC, 2), width=13)
     d.line([256, 350, 296, 420], fill=band(TUNIC, 2), width=13)
     # tousled hair: cap + spiky fringe
-    d.chord([150, 100, 362, 250], 180, 360, fill=band(HAIR, 1))
-    for hx, hy in ((176, 196), (216, 206), (256, 210), (296, 206), (336, 196)):
-        d.ellipse([hx - 26, hy - 30, hx + 26, hy + 30], fill=band(HAIR, 1))
-    checker(d, [168, 112, 344, 200], band(HAIR, 't'))
+    d.chord([150, 98, 362, 226], 180, 360, fill=band(HAIR, 1))
+    for hx, hy in ((176, 172), (216, 182), (256, 186), (296, 182), (336, 172)):
+        d.ellipse([hx - 26, hy - 28, hx + 26, hy + 28], fill=band(HAIR, 1))
+    checker(d, [168, 110, 344, 180], band(HAIR, 't'))
     # beard covering the lower face
-    d.ellipse([170, 226, 342, 356], fill=band(HAIR, 1))
-    checker(d, [184, 240, 328, 344], band(HAIR, 't'))
-    d.ellipse([222, 236, 290, 288], fill=band(SKIN, 1))  # mouth patch
-    smile(d, 256, 254, 40)
-    dot_eyes(d, 256, 216, 48)
+    d.ellipse([172, 258, 340, 372], fill=band(HAIR, 1))
+    checker(d, [186, 272, 326, 360], band(HAIR, 't'))
+    d.ellipse([230, 282, 282, 322], fill=band(SKIN, 2))  # mouth patch
+    smile(d, 256, 294, 34)
+    dot_eyes(d, 256, 232, 48)
     return outline(img)
 
 
