@@ -4,6 +4,7 @@ import type { GameState, CropId, SpeciesId, PetId } from '../engine/types';
 import {
   createInitialState,
   plantCrop,
+  unlockCrop,
   assignVillager,
   collectBarn,
   applyElapsed,
@@ -29,6 +30,7 @@ interface GameStore {
   load: () => Promise<void>;
   tick: (now: number) => void;
   plant: (plotId: string, cropId: CropId | null) => void;
+  unlockCrop: (cropId: CropId) => void;
   assign: (villagerId: string, to: 'farm' | null) => void;
   collect: () => void;
   assignCreatureTo: (creatureId: string, to: 'idle' | 'forage') => void;
@@ -104,6 +106,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     tick: (now) => set({ state: applyElapsed(get().state, now) }),
 
     plant: (plotId, cropId) => commit(plantCrop(applyElapsed(get().state, Date.now()), plotId, cropId)),
+
+    unlockCrop: (cropId) => commit(unlockCrop(applyElapsed(get().state, Date.now()), cropId)),
 
     assign: (villagerId, to) => commit(assignVillager(applyElapsed(get().state, Date.now()), villagerId, to)),
 
