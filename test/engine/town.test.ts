@@ -11,7 +11,7 @@ import {
   satchelCapMult,
   forageMult,
 } from '../../src/engine/town';
-import { barnCap } from '../../src/engine/farm';
+import { barnCap, plantCrop, assignVillager } from '../../src/engine/farm';
 import { satchelCap, forageRatePerSec, assignCreature } from '../../src/engine/forest';
 import type { GameState } from '../../src/engine/types';
 
@@ -76,14 +76,12 @@ describe('purchaseUpgrade', () => {
     expect(canAfford(rich(), 'nope')).toBe(false);
   });
 
-  it('farm-plot appends plot-4, plot-5, plot-6 with null crop and unique ids', () => {
+  it('farm-plot appends plots 4-8 with null crop and unique ids, capped at maxLevel 5', () => {
     let s = rich(10 ** 9, 10 ** 9, 10 ** 9);
-    s = purchaseUpgrade(s, 'farm-plot');
-    s = purchaseUpgrade(s, 'farm-plot');
-    s = purchaseUpgrade(s, 'farm-plot');
-    expect(s.plots.map((p) => p.id)).toEqual(['plot-1', 'plot-2', 'plot-3', 'plot-4', 'plot-5', 'plot-6']);
+    for (let i = 0; i < 5; i++) s = purchaseUpgrade(s, 'farm-plot');
+    expect(s.plots.map((p) => p.id)).toEqual(['plot-1', 'plot-2', 'plot-3', 'plot-4', 'plot-5', 'plot-6', 'plot-7', 'plot-8']);
     expect(s.plots.slice(3).every((p) => p.crop === null)).toBe(true);
-    expect(purchaseUpgrade(s, 'farm-plot')).toBe(s); // maxLevel 3
+    expect(purchaseUpgrade(s, 'farm-plot')).toBe(s); // maxLevel 5 -> no 9th plot
   });
 });
 
@@ -135,12 +133,16 @@ describe('buyTreat', () => {
 });
 
 describe('multipliers wired into caps and rates', () => {
-  it('barn-silo scales barnCap (after the 500 floor) and stays an integer', () => {
-    const s0 = createInitialState(0); // no production -> floor cap 500
-    expect(barnCap(s0)).toBe(500);
-    const s1 = { ...s0, upgrades: { 'barn-silo': 1 } };
-    expect(barnCap(s1)).toBe(750); // 500 * 1.5
-    expect(Number.isInteger(barnCap(s1))).toBe(true);
+  it('barn-silo scales the barnCap of a produced resource and stays an integer', () => {
+    const s0 = createInitialState(0);
+    expect(barnCap(s0)).toEqual({ gold: 0, wood: 0, acorns: 0 }); // no production -> no cap
+    let s = plantCrop(s0, 'plot-1', 'wheat'); // 0.05 gold/s -> 4320/day (above the 500 floor)
+    s = assignVillager(s, 'vil-1', 'farm');
+    const base = barnCap(s).gold;
+    expect(base).toBe(4320);
+    const s1 = { ...s, upgrades: { 'barn-silo': 1 } };
+    expect(barnCap(s1).gold).toBe(Math.round(base * 1.5)); // 6480
+    expect(Number.isInteger(barnCap(s1).gold)).toBe(true);
   });
 
   it('satchel-stitch scales satchelCap (after the 200 floor) and stays an integer', () => {
