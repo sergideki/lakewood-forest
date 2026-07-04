@@ -8,3 +8,4 @@ dist/
 .claude/settings.json
 android/
 *.idsig
+.worktrees/
