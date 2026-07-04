@@ -5,6 +5,8 @@ import { cards } from '../styles';
 import { useGameStore } from '../../store/gameStore';
 import { CROPS, CROP_IDS, CROP_UNLOCK_COST } from '../../engine';
 import type { CropId, Resources } from '../../engine';
+import { CROP_SPRITES } from '../sprites';
+import { SpriteIcon } from './SpriteIcon';
 
 function fmt(sec: number): string {
   if (sec < 60) return `${sec}s`;
@@ -47,7 +49,7 @@ export function PlotGrid() {
           const crop = p.crop ? CROPS[p.crop] : null;
           return (
             <Pressable key={p.id} style={styles.plot} onPress={() => setPicking(p.id)}>
-              <Text style={styles.plotEmoji}>{crop ? crop.emoji : '➕'}</Text>
+              {crop ? <SpriteIcon sprite={CROP_SPRITES[crop.id]} emoji={crop.emoji} size={24} /> : <Text style={styles.plotEmoji}>➕</Text>}
               <Text style={styles.plotLabel}>{crop ? crop.name : 'empty'}</Text>
             </Pressable>
           );
@@ -77,7 +79,7 @@ export function PlotGrid() {
                 if (isUnlocked) {
                   return (
                     <Pressable key={id} style={styles.cropRow} onPress={() => choose(id)}>
-                      <Text style={styles.cropEmoji}>{c.emoji}</Text>
+                      <SpriteIcon sprite={CROP_SPRITES[id]} emoji={c.emoji} size={22} />
                       <Text style={styles.cropName}>{c.name}</Text>
                       <Text style={styles.cropMeta}>{meta}</Text>
                     </Pressable>
@@ -92,7 +94,8 @@ export function PlotGrid() {
                     onPress={() => { unlock(id); }}
                   >
                     <Text style={styles.cropEmoji}>🔒</Text>
-                    <Text style={styles.cropName}>{c.emoji} {c.name}</Text>
+                    <SpriteIcon sprite={CROP_SPRITES[id]} emoji={c.emoji} size={18} />
+                    <Text style={styles.cropName}>{c.name}</Text>
                     <Text style={styles.cropMeta}>unlock {costLabel(id)}</Text>
                   </Pressable>
                 );

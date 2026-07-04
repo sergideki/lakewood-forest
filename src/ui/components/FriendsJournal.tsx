@@ -4,7 +4,9 @@ import { cards } from '../styles';
 import { RARITY_COLOR } from '../rarity';
 import { useGameStore } from '../../store/gameStore';
 import { SPECIES, PETS, PET_IDS } from '../../engine';
+import { PET_SPRITES } from '../sprites';
 import { CreatureIcon } from './CreatureIcon';
+import { SpriteIcon } from './SpriteIcon';
 
 const AFFINITY_EMOJI = { wood: '🪵', acorn: '🌰', fish: '🐟' } as const;
 const ALL_SPECIES = Object.values(SPECIES); // static catalog — build once at module load
@@ -64,7 +66,7 @@ export function FriendsJournal() {
           }
           return (
             <View key={id} style={styles.cell}>
-              <Text style={styles.lockGlyph}>{pet.emoji}</Text>
+              <SpriteIcon sprite={PET_SPRITES[id]} emoji={pet.emoji} size={48} />
               <Text style={styles.name}>{pet.name}</Text>
               <Text style={[styles.rarity, { color: RARITY_COLOR[pet.rarity] }]}>• {pet.rarity}</Text>
             </View>
