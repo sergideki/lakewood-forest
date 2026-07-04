@@ -38,10 +38,15 @@ export function BarnCard() {
         active.map((r) => {
           const amount = Math.floor(barn[r]);
           const pct = cap[r] > 0 ? Math.min(100, Math.round((barn[r] / cap[r]) * 100)) : 0;
+          // cap 0 = a resource no longer being farmed but still holding leftover product;
+          // show just the amount (no "/ 0" denominator or meter).
+          const idle = cap[r] === 0;
           return (
             <View key={r} style={styles.row}>
-              <Text style={cards.sub}>{LABEL[r].emoji} {amount} / {cap[r]} {LABEL[r].name}</Text>
-              <View style={styles.meter}><View style={[styles.fill, { width: `${pct}%` }]} /></View>
+              <Text style={cards.sub}>
+                {LABEL[r].emoji} {amount}{idle ? '' : ` / ${cap[r]}`} {LABEL[r].name}
+              </Text>
+              {!idle && <View style={styles.meter}><View style={[styles.fill, { width: `${pct}%` }]} /></View>}
             </View>
           );
         })
