@@ -2,6 +2,8 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { theme } from '../theme';
 import { cards } from '../styles';
 import { useGameStore } from '../../store/gameStore';
+import { VILLAGER_SPRITES } from '../sprites';
+import { SpriteIcon } from './SpriteIcon';
 
 export function VillagerRow() {
   const villagers = useGameStore((s) => s.state.villagers);
@@ -20,7 +22,7 @@ export function VillagerRow() {
               style={[styles.chip, on && styles.chipOn]}
               onPress={() => assign(v.id, on ? null : 'farm')}
             >
-              <Text style={styles.chipEmoji}>{v.emoji}</Text>
+              <SpriteIcon sprite={VILLAGER_SPRITES[v.id]} emoji={v.emoji} size={22} />
               <Text style={[styles.chipName, on && styles.chipNameOn]}>{v.name}</Text>
               <Text style={styles.chipState}>{on ? 'farming' : 'resting'}</Text>
             </Pressable>
@@ -36,7 +38,6 @@ const styles = StyleSheet.create({
   chip: { flex: 1, backgroundColor: '#26332a', borderRadius: 10, paddingVertical: 10, alignItems: 'center',
     borderWidth: 1, borderColor: 'transparent' },
   chipOn: { borderColor: theme.accent, backgroundColor: '#2e4535' },
-  chipEmoji: { fontSize: 22 },
   chipName: { color: theme.textDim, fontSize: 12, marginTop: 3, fontWeight: '600' },
   chipNameOn: { color: theme.text },
   chipState: { color: theme.textDim, fontSize: 10, marginTop: 1 },
