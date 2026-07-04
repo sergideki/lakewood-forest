@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialState, plantCrop, assignVillager, applyElapsed, barnCap } from '../../src/engine';
+import { createInitialState, plantCrop, assignVillager, applyElapsed, barnCap, MARIGOLD_FISH_PER_SEC } from '../../src/engine';
 import { assignCreature } from '../../src/engine/forest';
 
 function activeFarm(now: number) {
@@ -69,5 +69,20 @@ describe('applyElapsed (forest)', () => {
     const next = applyElapsed(s, 10 * 3600 * 1000); // long after it would be ready
     expect(next.dungeons.find((d) => d.id === 'hollow')!.activeRun).not.toBeNull();
     expect(next.resources.gold).toBe(0); // nothing paid until collectRun
+  });
+});
+
+describe('applyElapsed marigold drain', () => {
+  it('drains fish for planted marigolds across an offline gap', () => {
+    const base = createInitialState(0);
+    const s = {
+      ...base,
+      unlockedCrops: ['wheat', 'marigold'],
+      plots: [...base.plots, { id: 'm-0', crop: 'marigold' as const }],
+      resources: { ...base.resources, fish: 100 },
+      meta: { lastSeen: 0 },
+    };
+    const after = applyElapsed(s, 100_000); // 100s elapsed → 0.02 * 100 = 2 fish drained
+    expect(after.resources.fish).toBeCloseTo(100 - MARIGOLD_FISH_PER_SEC * 100, 3);
   });
 });
