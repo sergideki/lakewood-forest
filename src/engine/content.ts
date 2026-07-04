@@ -1,12 +1,28 @@
-import type { Crop, CropId, Species, SpeciesId, Dungeon, TownUpgrade, UpgradeId, Habitat, Pet, PetId } from './types';
+import type { Crop, CropId, Species, SpeciesId, Dungeon, TownUpgrade, UpgradeId, Habitat, Pet, PetId, Resources } from './types';
 
 export const CROPS: Record<CropId, Crop> = {
-  wheat:  { id: 'wheat',  name: 'Wheat',  emoji: '🌾', growSec: 100, gold: 5 },
-  carrot: { id: 'carrot', name: 'Carrot', emoji: '🥕', growSec: 240, gold: 14 },
-  berry:  { id: 'berry',  name: 'Berry',  emoji: '🍓', growSec: 480, gold: 32 },
+  wheat:    { kind: 'producer', id: 'wheat',    name: 'Wheat',    emoji: '🌾', output: 'gold',   amount: 5, growSec: 100 },
+  carrot:   { kind: 'producer', id: 'carrot',   name: 'Carrot',   emoji: '🥕', output: 'acorns', amount: 6, growSec: 180 },
+  sapling:  { kind: 'producer', id: 'sapling',  name: 'Sapling',  emoji: '🌲', output: 'wood',   amount: 6, growSec: 180 },
+  marigold: { kind: 'modifier', id: 'marigold', name: 'Marigold', emoji: '🌼' },
 };
 
 export const CROP_IDS: CropId[] = Object.keys(CROPS);
+
+/** Crops unlocked at game start (all others must be bought via unlockCrop). */
+export const STARTER_CROPS: CropId[] = ['wheat'];
+
+/** One-time cost to permanently unlock a crop for planting. Absent component = 0. */
+export const CROP_UNLOCK_COST: Record<CropId, Partial<Resources>> = {
+  carrot:   { gold: 50 },
+  sapling:  { gold: 50 },
+  marigold: { gold: 150, fish: 40 },
+};
+
+// --- Marigold (modifier crop) tuning ---
+export const MARIGOLD_CATCH_BONUS = 0.05;  // +catch chance per planted marigold plot
+export const MARIGOLD_CATCH_CAP = 0.50;    // hard ceiling on total catch chance (binds at 5 marigolds)
+export const MARIGOLD_FISH_PER_SEC = 0.02; // fish drained per second per planted marigold (~72/hour)
 
 export const SPECIES: Record<SpeciesId, Species> = {
   fernling:  { id: 'fernling',  name: 'Fernling',   emoji: '🌱', rarity: 'common',   affinity: 'acorn' },
@@ -41,7 +57,7 @@ export const UPGRADES: Record<UpgradeId, TownUpgrade> = {
   'barn-silo':      { id: 'barn-silo',      name: 'Barn Silo',         emoji: '🏚️', description: '+50% barn capacity per level',    maxLevel: 5, baseCost: { gold: 40,  wood: 25 },   costGrowth: 1.8 },
   'satchel-stitch': { id: 'satchel-stitch', name: 'Satchel Stitching', emoji: '🧵', description: '+50% satchel capacity per level', maxLevel: 5, baseCost: { gold: 40,  acorns: 20 }, costGrowth: 1.8 },
   'forage-tools':   { id: 'forage-tools',   name: 'Forage Tools',      emoji: '🪓', description: '+15% forage rate per level',      maxLevel: 5, baseCost: { gold: 60,  wood: 30 },   costGrowth: 1.9 },
-  'farm-plot':      { id: 'farm-plot',      name: 'Farm Expansion',    emoji: '🚜', description: 'Clear land for a new crop plot',  maxLevel: 3, baseCost: { gold: 150, wood: 50 },   costGrowth: 2.5 },
+  'farm-plot':      { id: 'farm-plot',      name: 'Farm Expansion',    emoji: '🚜', description: 'Clear land for a new crop plot',  maxLevel: 5, baseCost: { gold: 150, wood: 50 },   costGrowth: 2.5 },
 };
 
 export const UPGRADE_IDS: UpgradeId[] = Object.keys(UPGRADES);
