@@ -17,8 +17,10 @@ import {
   collectCreel,
   buildHabitat,
   collectHabitat,
+  tradeWoodForFish,
 } from '../engine';
 import { serialize, deserialize, tryDeserialize } from '../persistence/save';
+import { computeAwayReport, AwayReport } from '../lib/awayReport';
 
 const STORAGE_KEY = 'lakewood.save.v1'; // key unchanged; the envelope's `version` drives migration
 
@@ -27,6 +29,7 @@ interface GameStore {
   loaded: boolean;
   lastDiscovery: SpeciesId | null;
   lastCatch: PetId | null;
+  awayReport: AwayReport | null;
   load: () => Promise<void>;
   tick: (now: number) => void;
   plant: (plotId: string, cropId: CropId | null) => void;
@@ -44,6 +47,8 @@ interface GameStore {
   collectHabitat: (habitatId: string) => void;
   dismissCatch: () => void;
   dismissDiscovery: () => void;
+  dismissAwayReport: () => void;
+  tradeWood: () => void;
   save: () => void;
   exportState: () => string;
   importState: (json: string) => boolean;
@@ -89,13 +94,17 @@ export const useGameStore = create<GameStore>((set, get) => {
     loaded: false,
     lastDiscovery: null,
     lastCatch: null,
+    awayReport: null,
 
     load: async () => {
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        const restored = applyElapsed(deserialize(raw), Date.now());
-        persist(restored);
-        set({ state: restored, loaded: true });
+        const restored = deserialize(raw);
+        const now = Date.now();
+        const advanced = applyElapsed(restored, now);
+        const report = computeAwayReport(restored, advanced, now);
+        persist(advanced);
+        set({ state: advanced, loaded: true, awayReport: report });
       } catch {
         // Storage read failed — still flip `loaded` so the game boots on the fresh initial
         // state and can persist from here (otherwise it would hang un-hydrated forever).
@@ -155,6 +164,10 @@ export const useGameStore = create<GameStore>((set, get) => {
     dismissCatch: () => set({ lastCatch: null }),
 
     dismissDiscovery: () => set({ lastDiscovery: null }),
+
+    dismissAwayReport: () => set({ awayReport: null }),
+
+    tradeWood: () => commit(tradeWoodForFish(applyElapsed(get().state, Date.now()))),
 
     save: () => { if (get().loaded) persist(get().state); },
 
