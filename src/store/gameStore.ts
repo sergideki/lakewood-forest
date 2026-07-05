@@ -18,6 +18,7 @@ import {
   buildHabitat,
   collectHabitat,
   tradeWoodForFish,
+  recruitVillager,
 } from '../engine';
 import { serialize, deserialize, tryDeserialize } from '../persistence/save';
 import { computeAwayReport, AwayReport } from '../lib/awayReport';
@@ -49,6 +50,7 @@ interface GameStore {
   dismissDiscovery: () => void;
   dismissAwayReport: () => void;
   tradeWood: () => void;
+  recruit: () => void;
   save: () => void;
   exportState: () => string;
   importState: (json: string) => boolean;
@@ -168,6 +170,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     dismissAwayReport: () => set({ awayReport: null }),
 
     tradeWood: () => commit(tradeWoodForFish(applyElapsed(get().state, Date.now()))),
+
+    recruit: () => commit(recruitVillager(applyElapsed(get().state, Date.now()), Math.random)),
 
     save: () => { if (get().loaded) persist(get().state); },
 

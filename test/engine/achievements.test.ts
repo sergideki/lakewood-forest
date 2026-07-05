@@ -9,9 +9,9 @@ const byId = (id: string) => {
 };
 
 describe('achievements', () => {
-  it('exposes exactly the 10 planned milestones', () => {
+  it('exposes exactly the 11 planned milestones', () => {
     expect(ACHIEVEMENTS.map((a) => a.id).sort()).toEqual(
-      ['angler','aquarist','first-friends','forest-complete','lumberjack','pet-parent','seasoned','townsfolk','veteran','wealthy'].sort(),
+      ['angler','aquarist','first-friends','forest-complete','full-house','lumberjack','pet-parent','seasoned','townsfolk','veteran','wealthy'].sort(),
     );
   });
 

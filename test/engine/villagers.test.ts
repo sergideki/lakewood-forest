@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, plantCrop } from '../../src/engine';
-import { villagerBoost, villagerXpForLevel, grantVillagerXp, dripVillagerXp } from '../../src/engine/villagers';
+import { villagerBoost, villagerXpForLevel, grantVillagerXp, dripVillagerXp, recruitCost, recruitVillager } from '../../src/engine/villagers';
+import { MAX_VILLAGERS } from '../../src/engine';
 import { farmRatesPerSec } from '../../src/engine/farm';
 import { fishRatePerSec } from '../../src/engine/lake';
 import type { GameState, Station } from '../../src/engine/types';
@@ -70,5 +71,27 @@ describe('villager leveling', () => {
     const out = dripVillagerXp(s, 100); // 0.05*100 = 5 xp to vil-1 only
     expect(out.villagers.find((v) => v.id === 'vil-1')!.xp).toBe(5);
     expect(out.villagers.find((v) => v.id === 'vil-2')!.xp).toBe(0); // resting
+  });
+});
+
+describe('recruit', () => {
+  it('recruitCost escalates and is null at cap', () => {
+    expect(recruitCost(3)).toEqual({ gold: 120, wood: 0, acorns: 40, fish: 0 });
+    expect(recruitCost(4)).toEqual({ gold: Math.ceil(120 * 1.8), wood: 0, acorns: Math.ceil(40 * 1.8), fish: 0 });
+    expect(recruitCost(MAX_VILLAGERS)).toBeNull();
+  });
+  it('recruitVillager appends a level-1 unassigned villager and deducts cost (deterministic rng)', () => {
+    let s = createInitialState(0);
+    s = { ...s, resources: { ...s.resources, gold: 500, acorns: 200 } };
+    const out = recruitVillager(s, () => 0); // specialty=farm, name=Bram
+    expect(out.villagers).toHaveLength(4);
+    const nv = out.villagers[3];
+    expect(nv).toMatchObject({ id: 'vil-4', level: 1, xp: 0, assignedTo: null, specialty: 'farm' });
+    expect(out.resources.gold).toBe(500 - 120);
+    expect(out.resources.acorns).toBe(200 - 40);
+  });
+  it('recruitVillager is a no-op when unaffordable or at cap', () => {
+    const poor = createInitialState(0); // 0 gold
+    expect(recruitVillager(poor, () => 0)).toBe(poor);
   });
 });
