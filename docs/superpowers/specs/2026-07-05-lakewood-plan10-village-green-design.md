@@ -80,7 +80,7 @@ Existing `TREAT_COST_ACORNS = 25`, `TREAT_XP = 100` stay. Effective treat XP = `
 
 ## 3. State & save (`types.ts`, `save.ts`)
 
-Add two fields to `GameState`:
+Add two fields to `GameState`. `LandmarkId` type lives in `types.ts` next to `PetId` (skeptic L5); `content.ts` imports it.
 
 ```ts
 landmarks: LandmarkId[];   // built landmark ids (mirrors `pets: PetId[]`)
@@ -129,6 +129,8 @@ export function fundFestival(state): GameState         // pay cost, festivalLeve
 | Market `tradeYield` | `town.ts` `tradeWoodForFish` | fish out = `round(TRADE_FISH_YIELD * landmarkLeverMult(state,'tradeYield'))` |
 
 ### Prosperity (festival) — 3 leaf-rate seams, no double-count
+
+> ⚠️ The fish seam is a **surgical expression rewrite, not a one-liner** (skeptic M2). Prosperity must apply to the rod base **only** — `forageRatePerSec(state,'fish')` already carries prosperity from the forest seam. The naive `(...) * villagerBoost * prosperityMult` double-counts every fish forager (2.25× instead of 1.5×). Note also Lanterns/`forageRate` and prosperity both reach fish via the shared `forageRatePerSec` seam — that is correct and matches existing `forage-tools`/dragonfly behavior (skeptic L2). Prosperity does NOT touch dungeon loot or the wood→fish trade (skeptic L1) — "all production" means the three continuous rate seams only.
 
 | Seam | Change |
 |---|---|
@@ -185,9 +187,11 @@ New `test/landmarks.test.ts`:
 - `festivalCost` scaling; `canFundFestival` gated on all-8-built; `fundFestival` pays + increments; `prosperityMult` linear.
 - `feedAllTreats`: feeds min(roster, affordable) creatures, spends exact acorns, no-op when broke.
 - **Save round-trip**: a v7 blob deserializes to a v8 state with `landmarks: []`, `festivalLevel: 0`; v8 serialize/deserialize is stable.
-- **Regression guard**: with no landmarks + `festivalLevel: 0`, every existing rate/cap function returns its pre-change value (prosperity/lever mults are strict identities). Update existing tests only where a mult is now a factor (must be ×1.0 → no numeric change).
+- **Regression guard**: with no landmarks + `festivalLevel: 0`, every existing rate/cap function returns its pre-change value (prosperity/lever mults are strict identities — `x * 1.0 === x` bit-for-bit, so no `Math.round/ceil/floor` downstream shifts).
+- **Non-identity prosperity test** (skeptic M2): build a state with `festivalLevel: 25` + one fish forager and assert `fishRatePerSec` scales the rod term and the forager term **each exactly once** (no double-count). The ×1.0 regression guard cannot catch this class of bug.
+- **Breaking-test set — re-derived from a grep of `test/`, NOT from reasoning** (skeptic M1): `test/persistence/save.test.ts` hard-codes `expect(SAVE_VERSION).toBe(7)` → change to `.toBe(8)`. Before building, `grep -rn "toBe(7)\|VERSION" test/` to catch any other version-pinned assertion. All exact rate/cap assertions (`farm.test.ts` barnCap, `town.test.ts` mults/caps/treat/trade, `lake.test.ts` creel, `villagers.test.ts` drip) stay numerically identical at landmarks=[]/festivalLevel=0 — no edits needed there.
 
-Gates: `npx tsc --noEmit` clean, `npx vitest run` green.
+Gates: `npx tsc --noEmit` clean, `npx vitest run` green (full suite, including the version-bumped save test).
 
 ---
 
