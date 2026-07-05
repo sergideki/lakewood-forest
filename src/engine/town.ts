@@ -1,5 +1,5 @@
 import type { GameState, Resources, UpgradeId, CropId } from './types';
-import { UPGRADES, TREAT_COST_ACORNS, TREAT_XP, CROPS, CROP_UNLOCK_COST } from './content';
+import { UPGRADES, TREAT_COST_ACORNS, TREAT_XP, CROPS, CROP_UNLOCK_COST, TRADE_WOOD_COST, TRADE_FISH_YIELD } from './content';
 import { grantXp } from './creatures';
 import { petLeverMult } from './pets';
 
@@ -101,5 +101,24 @@ export function unlockCrop(state: GameState, cropId: CropId): GameState {
       fish: state.resources.fish - (cost.fish ?? 0),
     },
     unlockedCrops: [...state.unlockedCrops, cropId],
+  };
+}
+
+/** True when the player can afford one wood→fish trade. */
+export function canTradeWoodForFish(state: GameState): boolean {
+  return state.resources.wood >= TRADE_WOOD_COST;
+}
+
+/** Spend TRADE_WOOD_COST wood for TRADE_FISH_YIELD fish. No-op (same ref) if unaffordable.
+ *  The recurring wood SINK that revives sapling; touches only resources → save-safe. */
+export function tradeWoodForFish(state: GameState): GameState {
+  if (!canTradeWoodForFish(state)) return state;
+  return {
+    ...state,
+    resources: {
+      ...state.resources,
+      wood: state.resources.wood - TRADE_WOOD_COST,
+      fish: state.resources.fish + TRADE_FISH_YIELD,
+    },
   };
 }

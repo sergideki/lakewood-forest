@@ -10,6 +10,8 @@ import {
   barnCapMult,
   satchelCapMult,
   forageMult,
+  canTradeWoodForFish,
+  tradeWoodForFish,
 } from '../../src/engine/town';
 import { barnCap, plantCrop, assignVillager } from '../../src/engine/farm';
 import { satchelCap, forageRatePerSec, assignCreature } from '../../src/engine/forest';
@@ -181,5 +183,26 @@ describe('pet bonuses feed town mults', () => {
     const base = createInitialState(0);
     const s = { ...base, pets: ['pondsnail'], upgrades: { 'barn-silo': 2 } }; // (1+0.5*2)*1.05
     expect(barnCapMult(s)).toBeCloseTo(2 * 1.05, 10);
+  });
+});
+
+describe('wood -> fish trade', () => {
+  it('affordable trade deducts 20 wood and adds 4 fish', () => {
+    const s = { ...createInitialState(0), resources: { gold: 0, wood: 50, acorns: 0, fish: 0 } };
+    expect(canTradeWoodForFish(s)).toBe(true);
+    const t = tradeWoodForFish(s);
+    expect(t.resources.wood).toBe(30);
+    expect(t.resources.fish).toBe(4);
+  });
+  it('unaffordable trade is a no-op (same ref)', () => {
+    const s = { ...createInitialState(0), resources: { gold: 0, wood: 19, acorns: 0, fish: 0 } };
+    expect(canTradeWoodForFish(s)).toBe(false);
+    expect(tradeWoodForFish(s)).toBe(s);
+  });
+  it('is repeatable (two trades = -40 wood / +8 fish)', () => {
+    let s = { ...createInitialState(0), resources: { gold: 0, wood: 100, acorns: 0, fish: 0 } };
+    s = tradeWoodForFish(tradeWoodForFish(s));
+    expect(s.resources.wood).toBe(60);
+    expect(s.resources.fish).toBe(8);
   });
 });
