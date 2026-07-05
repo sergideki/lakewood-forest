@@ -7,3 +7,4 @@ export * from './creatures';
 export * from './forest';
 export * from './town';
 export * from './lake';
+export * from './pets';
