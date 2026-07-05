@@ -23,6 +23,7 @@ export function createInitialState(now: number): GameState {
     upgrades: {},
     habitats: HABITATS.map((h) => ({ id: h.id, builtAt: null })),
     pets: [],
+    lifetime: { gold: 0, wood: 0, acorns: 0, fish: 0 },
     meta: { lastSeen: now },
   };
 }
