@@ -9,12 +9,26 @@ export function TreatsCard() {
   const creatures = useGameStore((s) => s.state.creatures);
   const acorns = useGameStore((s) => s.state.resources.acorns);
   const feedTreat = useGameStore((s) => s.feedTreat);
+  const feedAll = useGameStore((s) => s.feedAll);
   const broke = acorns < TREAT_COST_ACORNS;
+  const affordableCount = Math.min(creatures.length, Math.floor(acorns / TREAT_COST_ACORNS));
+  const feedAllCost = affordableCount * TREAT_COST_ACORNS;
 
   return (
     <View style={cards.card}>
       <Text style={cards.title}>🍪 Treats</Text>
       <Text style={cards.sub}>{TREAT_COST_ACORNS} 🌰 → +{TREAT_XP} XP for a friend</Text>
+      {creatures.length > 1 && (
+        <Pressable
+          style={[styles.feedAll, broke && styles.btnDisabled]}
+          disabled={broke}
+          onPress={feedAll}
+        >
+          <Text style={styles.feedAllText}>
+            {broke ? 'Feed all' : `Feed all ${affordableCount} · ${feedAllCost} 🌰`}
+          </Text>
+        </Pressable>
+      )}
       {creatures.map((c) => (
         <View key={c.id} style={styles.row}>
           <CreatureIcon speciesId={c.species} emoji={c.emoji} size={24} />
@@ -43,4 +57,6 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: theme.accent, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 7 },
   btnDisabled: { opacity: 0.4 },
   btnText: { color: theme.accentInk, fontWeight: '700', fontSize: 13 },
+  feedAll: { backgroundColor: theme.accent, borderRadius: 14, paddingVertical: 9, alignItems: 'center', marginTop: 8 },
+  feedAllText: { color: theme.accentInk, fontWeight: '700', fontSize: 14 },
 });
