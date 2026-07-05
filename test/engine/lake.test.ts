@@ -299,3 +299,17 @@ describe('pet bonuses feed lake', () => {
     expect(creelCatchChance(createInitialState(0))).toBe(0.25);
   });
 });
+
+it('collectCreel bumps lifetime.fish by the floored bank; the wood->fish trade never does', () => {
+  const base = createInitialState(0);
+  const withCreel = { ...base, storage: { ...base.storage, creel: { fish: 4.7 } } };
+  const collected = collectCreel(withCreel, () => 0.99); // rng high → no pet catch
+  expect(collected.lifetime.fish).toBe(4);      // floored
+  expect(collected.resources.fish).toBe(4);
+  expect(collected.storage.creel.fish).toBeCloseTo(0.7, 5);
+});
+
+it('collectCreel on an empty creel bumps nothing', () => {
+  const s = createInitialState(0);
+  expect(collectCreel(s, () => 0.99).lifetime.fish).toBe(0);
+});

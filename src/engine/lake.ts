@@ -14,6 +14,7 @@ import {
 import { DISCOVERY_WEIGHT, makeCreature } from './creatures';
 import { forageRatePerSec } from './forest';
 import { petLeverMult, petCatchBonus } from './pets';
+import { bumpLifetime } from './lifetime';
 
 /** Fish/sec = flat rod base + all fish-affinity foragers (creature part is forageMult-boosted). */
 export function fishRatePerSec(state: GameState): number {
@@ -97,7 +98,8 @@ export function collectCreel(state: GameState, rng: Rng): GameState {
   };
   // Chance is measured on the PRE-bank state: marigolds are dormant when the pond (resources.fish)
   // is dry, so a collect after the pond drained rolls at base — the just-banked fish don't revive it.
-  return rollCatch(banked, creelCatchChance(state), rng);
+  const withLifetime = bumpLifetime(banked, { fish: bankFish });
+  return rollCatch(withLifetime, creelCatchChance(state), rng);
 }
 
 export type HabitatStatus = 'unbuilt' | 'attracting' | 'ready' | 'done';

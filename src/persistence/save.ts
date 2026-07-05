@@ -2,7 +2,7 @@ import type { GameState } from '../engine/types';
 import { createInitialState, makeCreature } from '../engine';
 import { DUNGEONS, STARTER_SPECIES, HABITATS, CROP_IDS, STARTER_CROPS } from '../engine/content';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 interface SaveEnvelope {
   version: number;
@@ -63,13 +63,16 @@ function isValidBaseState(state: unknown): state is GameState {
   return true;
 }
 
-/** Additive migrations. v1(farm)->v2(forest)->v3(town)->v4(lake)->v5(crops). Idempotent. */
+/** Additive migrations. v1(farm)->v2(forest)->v3(town)->v4(lake)->v5(crops)->v6(lifetime). Idempotent. */
 function migrate(fromVersion: number, state: GameState): GameState {
   let s = state;
   if (fromVersion < 2) s = addForestFields(s);
   if (fromVersion < 3) s = { ...s, upgrades: s.upgrades ?? {} };
   if (fromVersion < 4) s = addLakeFields(s);
   if (fromVersion < 5) s = addCropRework(s);
+  // Always run (not version-gated): per-field ?? makes it idempotent, and a same-version (v6)
+  // blob with a partial lifetime object (e.g. a hand-edited import) still needs backfilling.
+  s = addLifetimeCounters(s);
   return s;
 }
 
@@ -115,4 +118,19 @@ function addCropRework(old: GameState): GameState {
   const unlockedCrops = Array.from(new Set([...seeded, ...STARTER_CROPS, ...fromPlots]));
 
   return { ...old, storage: { ...old.storage, barn }, plots, unlockedCrops };
+}
+
+/** v5->v6: backfill cumulative lifetime counters. Per-field ?? so a partial import blob
+ *  ({lifetime:{gold:5}}) can't leave an undefined key that a later bump turns into NaN. */
+function addLifetimeCounters(old: GameState): GameState {
+  const l = old.lifetime as Partial<GameState['lifetime']> | undefined;
+  return {
+    ...old,
+    lifetime: {
+      gold: l?.gold ?? 0,
+      wood: l?.wood ?? 0,
+      acorns: l?.acorns ?? 0,
+      fish: l?.fish ?? 0,
+    },
+  };
 }

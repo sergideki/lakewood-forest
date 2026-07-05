@@ -121,6 +121,14 @@ export interface Resources {
   fish: number;
 }
 
+/** Cumulative counters that only ever go up — never spent. Backs achievements. */
+export interface Lifetime {
+  gold: number;
+  wood: number;
+  acorns: number;
+  fish: number;
+}
+
 export interface Meta {
   lastSeen: number; // epoch ms
 }
@@ -149,5 +157,6 @@ export interface GameState {
   upgrades: Record<UpgradeId, number>; // upgrade id -> owned level; absent key = 0
   habitats: HabitatState[];
   pets: PetId[]; // discovered pet ids; absent/[] = none caught
+  lifetime: Lifetime; // cumulative banked totals; additive save v6
   meta: Meta;
 }

@@ -8,6 +8,7 @@ import type { PetLever } from '../../engine';
 import { PET_SPRITES } from '../sprites';
 import { CreatureIcon } from './CreatureIcon';
 import { SpriteIcon } from './SpriteIcon';
+import { MilestonesSection } from './MilestonesSection';
 
 const AFFINITY_EMOJI = { wood: '🪵', acorn: '🌰', fish: '🐟' } as const;
 const ALL_SPECIES = Object.values(SPECIES); // static catalog — build once at module load
@@ -87,6 +88,8 @@ export function FriendsJournal() {
           );
         })}
       </View>
+
+      <MilestonesSection />
     </View>
   );
 }

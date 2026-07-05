@@ -70,7 +70,7 @@ describe('v1 -> v2 migration', () => {
   it('leaves a current save untouched', () => {
     const v2 = serialize(createInitialState(1));
     expect(JSON.parse(v2).version).toBe(SAVE_VERSION);
-    expect(SAVE_VERSION).toBe(5);
+    expect(SAVE_VERSION).toBe(6);
     const restored = deserialize(v2);
     expect(restored.creatures).toHaveLength(2);
     expect(Object.keys(SPECIES).length).toBeGreaterThanOrEqual(10);
@@ -200,5 +200,23 @@ describe('v4 -> v5 migration (crop rework)', () => {
     const viaImport = tryDeserialize(v4);
     expect(viaImport).not.toBeNull();                  // NOT rejected
     expect(viaImport!.resources.gold).toBe(77);
+  });
+});
+
+describe('v5 -> v6 lifetime migration', () => {
+  it('backfills lifetime zeros on a v5 save and does not wipe it', () => {
+    const s5 = { ...createInitialState(0), resources: { gold: 42, wood: 0, acorns: 0, fish: 9 } };
+    delete (s5 as { lifetime?: unknown }).lifetime;         // simulate a real v5 blob (no lifetime)
+    const blob = JSON.stringify({ version: 5, state: s5 });
+    const restored = deserialize(blob);
+    expect(restored.resources.gold).toBe(42);               // not wiped
+    expect(restored.lifetime).toEqual({ gold: 0, wood: 0, acorns: 0, fish: 0 });
+  });
+
+  it('backfills a PARTIAL lifetime object per field (no NaN)', () => {
+    const s = { ...createInitialState(0) };
+    (s as { lifetime: unknown }).lifetime = { gold: 5 };    // partial (bad import)
+    const restored = tryDeserialize(JSON.stringify({ version: 6, state: s }));
+    expect(restored?.lifetime).toEqual({ gold: 5, wood: 0, acorns: 0, fish: 0 });
   });
 });

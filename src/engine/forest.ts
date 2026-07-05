@@ -2,6 +2,7 @@ import type { GameState, Material, Rng } from './types';
 import { creatureForageOutput, rollDiscovery, teamPower, grantXp } from './creatures';
 import { getDungeon } from './content';
 import { satchelCapMult, forageMult } from './town';
+import { bumpLifetime } from './lifetime';
 
 export const SATCHEL_HOURS = 24;
 export const SATCHEL_FLOOR = 200;
@@ -60,7 +61,8 @@ export function collectSatchel(state: GameState, rng: Rng): GameState {
     },
     storage: { ...state.storage, satchel: { wood: wood - bankWood, acorn: acorn - bankAcorn } },
   };
-  return rollDiscovery(banked, FORAGE_DISCOVERY_CHANCE, rng);
+  const withLifetime = bumpLifetime(banked, { wood: bankWood, acorns: bankAcorn });
+  return rollDiscovery(withLifetime, FORAGE_DISCOVERY_CHANCE, rng);
 }
 
 /** Move a creature between idle and forage. No-op if it is currently in a dungeon. */
@@ -115,13 +117,16 @@ export function collectRun(state: GameState, dungeonId: string, rng: Rng, now: n
   const power = teamPower(state, run.creatureIds);
   const mult = Math.max(0.5, Math.min(1.5, power / def.recommendedPower));
 
+  const gainGold = Math.floor(def.loot.gold * mult);
+  const gainWood = Math.floor(def.loot.wood * mult);
+  const gainAcorns = Math.floor(def.loot.acorn * mult);
   const paid: GameState = {
     ...state,
     resources: {
       ...state.resources,
-      gold: state.resources.gold + Math.floor(def.loot.gold * mult),
-      wood: state.resources.wood + Math.floor(def.loot.wood * mult),
-      acorns: state.resources.acorns + Math.floor(def.loot.acorn * mult),
+      gold: state.resources.gold + gainGold,
+      wood: state.resources.wood + gainWood,
+      acorns: state.resources.acorns + gainAcorns,
     },
     creatures: state.creatures.map((c) =>
       run.creatureIds.includes(c.id)
@@ -130,6 +135,6 @@ export function collectRun(state: GameState, dungeonId: string, rng: Rng, now: n
     ),
     dungeons: state.dungeons.map((d) => (d.id === dungeonId ? { ...d, activeRun: null } : d)),
   };
-
-  return rollDiscovery(paid, Math.min(0.95, def.baseDiscoveryChance * mult), rng);
+  const withLifetime = bumpLifetime(paid, { gold: gainGold, wood: gainWood, acorns: gainAcorns });
+  return rollDiscovery(withLifetime, Math.min(0.95, def.baseDiscoveryChance * mult), rng);
 }

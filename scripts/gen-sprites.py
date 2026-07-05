@@ -312,26 +312,30 @@ def draw_dragonfly():
 
 def draw_pebbleturtle():
     img, d = canvas()
-    G = (122, 142, 108)
-    P = (152, 150, 138)
-    # side feet
-    feet(d, 256, 388, 138, G, w=66, h=44)
-    # shell dome
-    d.ellipse([116, 132, 396, 388], fill=band(G, 1))
-    checker(d, [132, 148, 380, 372], band(G, 't'))
-    d.chord([120, 240, 392, 384], 15, 165, fill=band(G, 2))
-    # rounded pebble facets
-    for px0, py0, pr in ((196, 178, 44), (306, 190, 40), (252, 268, 46),
-                         (160, 268, 32), (346, 274, 32)):
-        d.ellipse([px0 - pr - 8, py0 - pr - 8, px0 + pr + 8, py0 + pr + 8],
-                  fill=band(G, 2))
+    G = (116, 150, 108)      # shell green
+    P = (176, 170, 154)      # pebble stone — lighter/warmer so facets pop
+    SKIN = (158, 184, 140)   # head green, lighter than the shell so it reads apart
+    # four stubby legs peeking under the shell
+    feet(d, 256, 398, 152, G, w=74, h=48)
+    # head below the shell rim (drawn first so the shell sits on top of its crown)
+    d.ellipse([198, 322, 314, 452], fill=band(SKIN, 1))
+    d.chord([202, 326, 310, 402], 195, 345, fill=band(SKIN, 0))
+    eyes(d, 256, 376, 33, 25)
+    smile(d, 256, 422, 40)
+    # domed shell
+    d.ellipse([110, 118, 402, 364], fill=band(G, 1))
+    d.chord([120, 120, 392, 284], 195, 345, fill=band(G, 0))   # top-lit dome
+    d.chord([116, 234, 396, 360], 15, 165, fill=band(G, 2))    # underside shadow
+    # cobbled facets: dark rim -> stone -> highlight chord -> specular glint
+    for px0, py0, pr in ((196, 188, 50), (314, 202, 44),
+                         (250, 286, 52), (150, 286, 30), (352, 290, 28)):
+        d.ellipse([px0 - pr - 11, py0 - pr - 11, px0 + pr + 11, py0 + pr + 11],
+                  fill=band(G, 3))
         d.ellipse([px0 - pr, py0 - pr, px0 + pr, py0 + pr], fill=band(P, 1))
-        d.chord([px0 - pr, py0 - pr, px0 + pr, py0 + pr], 195, 345,
-                fill=band(P, 0))
-    # head peeking below
-    d.ellipse([194, 302, 318, 434], fill=band(G, 0))
-    eyes(d, 256, 358, 35, 26)
-    smile(d, 256, 406, 38)
+        d.chord([px0 - pr, py0 - pr, px0 + pr, py0 + pr], 195, 345, fill=band(P, 0))
+        gr = pr * 0.30
+        gx, gy = px0 - pr * 0.42, py0 - pr * 0.52
+        d.ellipse([gx, gy, gx + 2 * gr, gy + 2 * gr], fill=SPECULAR)
     return outline(img)
 
 
@@ -382,36 +386,36 @@ def draw_pondnewt():
 
 def draw_wheat():
     img, d = canvas()
-    G = (200, 164, 84)
-    T = (150, 106, 62)
-    # three vertical grain heads, center taller
-    for dx, top in ((-84, 148), (0, 100), (84, 148)):
+    G = (206, 168, 86)      # golden grain
+    A = (228, 200, 122)     # bright awn / kernel highlight
+    T = (150, 106, 62)      # twine tie
+    # three pointed ears, center taller; each = a tapered lozenge + awns + chevrons
+    for dx, top in ((-96, 176), (0, 122), (96, 176)):
         cx = 256 + dx
-        # stem from head down to the tie
-        d.line([cx, top + 120, 256 + dx * 0.25, 356], fill=band(G, 2), width=13)
-        # awn whiskers
-        d.line([cx - 18, top - 6, cx - 46, top - 58], fill=band(G, 0), width=9)
-        d.line([cx + 18, top - 6, cx + 46, top - 58], fill=band(G, 0), width=9)
-        # kernel column
-        for i in range(4):
-            ky = top + i * 38
-            w = 36 - i * 3
-            d.ellipse([cx - w, ky - 28, cx + w, ky + 28], fill=band(G, 1))
-        d.ellipse([cx - 26, top - 32, cx + 26, top + 16], fill=band(G, 0))
-        # chevron notches
-        for i in range(3):
-            ky = top + 22 + i * 38
-            d.line([cx - 24, ky, cx, ky + 16], fill=band(G, 2), width=9)
-            d.line([cx + 24, ky, cx, ky + 16], fill=band(G, 2), width=9)
-    # stems flaring below the tie
-    for dx in (-36, 0, 36):
-        d.line([256 + dx * 0.3, 360, 256 + dx, 452], fill=band(G, 2), width=14)
-        d.line([256 + dx * 0.3, 360, 256 + dx, 448], fill=band(G, 1), width=7)
+        tip = top - 34
+        earbot = top + 150
+        # awns fanning up from the tip
+        for ax in (-2, -1, 1, 2):
+            d.line([cx, tip + 8, cx + ax * 24, tip - 76], fill=band(A, 0), width=6)
+        # stalk from the ear down to the tie
+        d.line([cx, earbot - 20, 256 + dx * 0.22, 372], fill=band(G, 2), width=12)
+        # ear body (tall lozenge) + top-lit sheen
+        d.ellipse([cx - 33, tip, cx + 33, earbot], fill=band(G, 1))
+        d.chord([cx - 33, tip, cx + 33, earbot - 70], 195, 345, fill=band(A, 1))
+        # kernel chevrons down the ear
+        for i in range(5):
+            ky = top + 6 + i * 30
+            d.line([cx - 27, ky, cx, ky + 17], fill=band(G, 2), width=7)
+            d.line([cx + 27, ky, cx, ky + 17], fill=band(G, 2), width=7)
+    # stalks flaring below the tie
+    for dx in (-40, 0, 40):
+        d.line([256 + dx * 0.3, 372, 256 + dx, 466], fill=band(G, 2), width=13)
+        d.line([256 + dx * 0.3, 372, 256 + dx, 462], fill=band(G, 1), width=6)
     # tied band
-    d.rounded_rectangle([192, 328, 320, 380], radius=20, fill=band(T, 1))
-    d.chord([196, 350, 316, 384], 15, 165, fill=band(T, 2))
-    d.line([232, 332, 218, 376], fill=band(T, 2), width=10)
-    d.line([280, 332, 294, 376], fill=band(T, 2), width=10)
+    d.rounded_rectangle([198, 344, 314, 392], radius=18, fill=band(T, 1))
+    d.chord([202, 366, 310, 396], 15, 165, fill=band(T, 2))
+    d.line([236, 348, 222, 388], fill=band(T, 2), width=9)
+    d.line([276, 348, 290, 388], fill=band(T, 2), width=9)
     return outline(img)
 
 
@@ -499,23 +503,33 @@ def bust(d, skin, shirt):
     d.chord([160, 200, 352, 326], 30, 150, fill=band(skin, 't'))
 
 
-def draw_vil_1():  # Pip — young farmer: straw hat, freckles, green shirt
+def draw_vil_1():  # Pip — young farmer: straw hat, sandy hair, freckles, green shirt
     img, d = canvas()
-    SKIN = (224, 182, 146)
-    HAT = (204, 164, 82)
-    SHIRT = (110, 142, 92)
+    SKIN = (226, 184, 148)
+    HAIR = (198, 146, 78)   # sandy hair peeking under the brim
+    HAT = (208, 170, 88)
+    FRECKLE = (198, 122, 92, 255)
+    SHIRT = (108, 148, 92)
     bust(d, SKIN, SHIRT)
+    # sandy hair: side tufts + a forelock, drawn before the hat so the brim overlaps it
+    for hx in (176, 214, 298, 336):
+        d.ellipse([hx - 26, 176, hx + 26, 236], fill=band(HAIR, 1))
+    d.ellipse([232, 156, 300, 214], fill=band(HAIR, 1))
+    d.chord([236, 158, 296, 200], 195, 345, fill=band(HAIR, 0))
     # straw hat: dome + wide brim + band
-    d.chord([172, 60, 340, 200], 180, 360, fill=band(HAT, 1))
-    checker(d, [186, 76, 326, 182], band(HAT, 't'))
-    d.rounded_rectangle([174, 158, 338, 192], radius=14, fill=band(HAT, 3))
-    d.ellipse([116, 140, 396, 204], fill=band(HAT, 1))
-    d.chord([120, 168, 392, 206], 15, 165, fill=band(HAT, 2))
-    dot_eyes(d, 256, 250, 48)
-    # freckles
-    for fx, fy in ((184, 278), (206, 290), (306, 290), (328, 278)):
-        d.ellipse([fx - 9, fy - 8, fx + 9, fy + 8], fill=band(SKIN, 2))
-    smile(d, 256, 286, 40)
+    d.chord([172, 56, 340, 198], 180, 360, fill=band(HAT, 1))
+    checker(d, [186, 72, 326, 180], band(HAT, 't'))
+    d.chord([176, 58, 336, 150], 195, 345, fill=band(HAT, 0))    # dome sheen
+    d.rounded_rectangle([174, 156, 338, 190], radius=14, fill=band(HAT, 3))
+    d.ellipse([110, 138, 402, 206], fill=band(HAT, 1))
+    d.chord([116, 170, 396, 208], 15, 165, fill=band(HAT, 2))
+    d.chord([120, 140, 392, 196], 195, 345, fill=band(HAT, 0))   # brim top edge
+    dot_eyes(d, 256, 252, 48)
+    blush(d, 256, 292, 98, w=42, h=24)
+    # freckles across the nose — warmer + clearer
+    for fx, fy in ((198, 282), (218, 294), (294, 294), (314, 282)):
+        d.ellipse([fx - 8, fy - 7, fx + 8, fy + 7], fill=FRECKLE)
+    smile(d, 256, 294, 40)
     return outline(img)
 
 

@@ -259,3 +259,11 @@ describe('collectRun', () => {
     expect(next.resources.gold).not.toBe(Math.floor(hollow.loot.gold * 4));
   });
 });
+
+it('collectSatchel bumps lifetime.wood and lifetime.acorns by the floored bank', () => {
+  const base = createInitialState(0);
+  const s = { ...base, storage: { ...base.storage, satchel: { wood: 6.4, acorn: 2.9 } } };
+  const out = collectSatchel(s, () => 0.99); // rng high → no discovery
+  expect(out.lifetime.wood).toBe(6);
+  expect(out.lifetime.acorns).toBe(2);
+});
