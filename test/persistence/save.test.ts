@@ -88,7 +88,7 @@ describe('v1 -> v2 migration', () => {
   it('leaves a current save untouched', () => {
     const v2 = serialize(createInitialState(1));
     expect(JSON.parse(v2).version).toBe(SAVE_VERSION);
-    expect(SAVE_VERSION).toBe(7);
+    expect(SAVE_VERSION).toBe(8);
     const restored = deserialize(v2);
     expect(restored.creatures).toHaveLength(2);
     expect(Object.keys(SPECIES).length).toBeGreaterThanOrEqual(10);

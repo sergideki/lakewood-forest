@@ -14,19 +14,22 @@ import {
 import { DISCOVERY_WEIGHT, makeCreature } from './creatures';
 import { forageRatePerSec } from './forest';
 import { petLeverMult, petCatchBonus } from './pets';
+import { landmarkLeverMult, landmarkCatchBonus, prosperityMult } from './landmarks';
 import { bumpLifetime } from './lifetime';
 import { villagerBoost } from './villagers';
 
 /** Fish/sec = flat rod base + all fish-affinity foragers (creature part is forageMult-boosted),
- *  then this station's villager boost applied to the whole rate. */
+ *  then this station's villager boost applied to the whole rate.
+ *  Festival prosperity applies to the ROD TERM ONLY — forageRatePerSec already carries prosperity
+ *  (forest seam), so multiplying the whole rate would double-count every fish forager (skeptic M2). */
 export function fishRatePerSec(state: GameState): number {
-  return (BASE_ROD_RATE + forageRatePerSec(state, 'fish')) * villagerBoost(state, 'lake');
+  return (BASE_ROD_RATE * prosperityMult(state) + forageRatePerSec(state, 'fish')) * villagerBoost(state, 'lake');
 }
 
-/** Creel capacity = a day of the current fish rate, floored, then lifted by pet creel bonus. */
+/** Creel capacity = a day of the current fish rate, floored, then lifted by pet + Koi Pond bonus. */
 export function creelCap(state: GameState): number {
   const base = Math.max(CREEL_FLOOR, Math.round(fishRatePerSec(state) * CREEL_HOURS * 3600));
-  return Math.round(base * petLeverMult(state, 'creelCap'));
+  return Math.round(base * petLeverMult(state, 'creelCap') * landmarkLeverMult(state, 'creelCap'));
 }
 
 /** Fill the creel by the fish rate over elapsedSec, clamped to cap. Immutable. */
@@ -72,7 +75,7 @@ export function creelCatchChance(state: GameState): number {
   const marigoldChance = n === 0 || state.resources.fish <= 0
     ? CATCH_CHANCE
     : Math.min(CATCH_CHANCE + MARIGOLD_CATCH_BONUS * n, MARIGOLD_CATCH_CAP);
-  return Math.min(1, marigoldChance + petCatchBonus(state));
+  return Math.min(1, marigoldChance + petCatchBonus(state) + landmarkCatchBonus(state));
 }
 
 /** Drain fish for planted marigolds over elapsedSec, clamped at 0. Immutable. No-op if none/≤0. */

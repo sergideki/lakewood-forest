@@ -113,6 +113,30 @@ export interface Pet {
   rarity: Rarity;
 }
 
+export type LandmarkId = string;
+
+/** The single perpetual buff a built landmark applies. Each id maps to exactly one lever
+ *  (mirrors PetLever); `catchChance` is additive, the rest are 1+Σamount multipliers. */
+export type LandmarkLever =
+  | 'treatXp'
+  | 'catchChance'
+  | 'forageRate'
+  | 'villagerXp'
+  | 'barnCap'
+  | 'tradeYield'
+  | 'creelCap'
+  | 'farmRate';
+
+export interface Landmark {
+  id: LandmarkId;
+  name: string;
+  emoji: string;            // fallback when no sprite is registered
+  blurb: string;            // one cozy line shown on the card
+  cost: Partial<Resources>; // one-time build cost; absent component = 0
+  lever: LandmarkLever;
+  amount: number;           // additive to the lever
+}
+
 export interface Storage {
   barn: { gold: number; wood: number; acorns: number };
   satchel: { wood: number; acorn: number };
@@ -163,5 +187,7 @@ export interface GameState {
   habitats: HabitatState[];
   pets: PetId[]; // discovered pet ids; absent/[] = none caught
   lifetime: Lifetime; // cumulative banked totals; additive save v6
+  landmarks: LandmarkId[]; // built landmark ids; absent/[] = none built (save v8)
+  festivalLevel: number;   // funded Lantern Festival levels; 0 until first (save v8)
   meta: Meta;
 }

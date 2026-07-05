@@ -11,3 +11,4 @@ export * from './pets';
 export * from './lifetime';
 export * from './achievements';
 export * from './villagers';
+export * from './landmarks';

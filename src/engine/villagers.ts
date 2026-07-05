@@ -1,5 +1,6 @@
 import type { GameState, Station, Villager, Resources, Rng } from './types';
 import { VILLAGER_PER, VILLAGER_SPEC, VILLAGER_XP_PER_SEC, MAX_VILLAGERS, VILLAGER_NAMES } from './content';
+import { landmarkLeverMult } from './landmarks';
 
 /** Multiplier a station's assigned villagers apply to its output. Farm is GATED (no villagers -> 0);
  *  Forest & Lake are ungated (they run on their own; villagers only add on top). */
@@ -23,7 +24,7 @@ export function grantVillagerXp(v: Villager, amount: number): Villager {
 /** Drip XP to every ASSIGNED villager over elapsedSec. Resting villagers gain nothing. */
 export function dripVillagerXp(state: GameState, elapsedSec: number): GameState {
   if (elapsedSec <= 0) return state;
-  const gain = VILLAGER_XP_PER_SEC * elapsedSec;
+  const gain = VILLAGER_XP_PER_SEC * elapsedSec * landmarkLeverMult(state, 'villagerXp'); // Stone Bridge buff
   return {
     ...state,
     villagers: state.villagers.map((v) => (v.assignedTo !== null ? grantVillagerXp(v, gain) : v)),

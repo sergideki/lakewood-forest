@@ -1,4 +1,4 @@
-import type { Crop, CropId, Species, SpeciesId, Dungeon, TownUpgrade, UpgradeId, Habitat, Pet, PetId, Resources, Station } from './types';
+import type { Crop, CropId, Species, SpeciesId, Dungeon, TownUpgrade, UpgradeId, Habitat, Pet, PetId, Landmark, LandmarkId, Resources, Station } from './types';
 
 export const CROPS: Record<CropId, Crop> = {
   wheat:    { kind: 'producer', id: 'wheat',    name: 'Wheat',    emoji: '🌾', output: 'gold',   amount: 5, growSec: 100 },
@@ -120,3 +120,23 @@ export const VILLAGER_XP_PER_SEC = 0.05; // XP/sec while assigned (TUNABLE)
 export const MAX_VILLAGERS = 8;
 export const VILLAGER_NAMES = ['Bram', 'Wren', 'Tansy', 'Milo', 'Fen', 'Ada', 'Rue', 'Sage', 'Bo', 'Ivy'];
 export const SPECIALTY_BY_ID: Record<string, Station> = { 'vil-1': 'farm', 'vil-2': 'forest', 'vil-3': 'lake' };
+
+// --- Plan 10: Village Green — endgame resource sink. One-time landmark builds, each a small
+// perpetual buff on a DISTINCT lever (mirrors PET_EFFECTS), then an infinite Lantern Festival tail. ---
+export const LANDMARKS: Record<LandmarkId, Landmark> = {
+  bakery:   { id: 'bakery',   name: 'Bakery',       emoji: '🍞', blurb: 'Warm treats go further.',       lever: 'treatXp',     amount: 0.25, cost: { gold: 1200, wood: 400, acorns: 300 } },
+  fountain: { id: 'fountain', name: 'Fountain',     emoji: '⛲', blurb: 'Shy pond-folk come closer.',     lever: 'catchChance', amount: 0.05, cost: { gold: 1600, fish: 200 } },
+  lanterns: { id: 'lanterns', name: 'Lantern Row',  emoji: '🏮', blurb: 'Foragers work by lantern-light.', lever: 'forageRate', amount: 0.10, cost: { gold: 1000, wood: 800, acorns: 200 } },
+  bridge:   { id: 'bridge',   name: 'Stone Bridge', emoji: '🌉', blurb: 'Villagers learn faster.',        lever: 'villagerXp',  amount: 0.20, cost: { gold: 2000, wood: 1200 } },
+  gazebo:   { id: 'gazebo',   name: 'Gazebo',       emoji: '🏛️', blurb: 'A roomier barn.',               lever: 'barnCap',     amount: 0.15, cost: { gold: 2500, wood: 900, acorns: 600 } },
+  market:   { id: 'market',   name: 'Market Stall', emoji: '🪧', blurb: 'Better trades at the post.',      lever: 'tradeYield',  amount: 0.50, cost: { gold: 1800, wood: 600, acorns: 400, fish: 300 } },
+  koipond:  { id: 'koipond',  name: 'Koi Pond',     emoji: '🎏', blurb: 'The creel holds more.',          lever: 'creelCap',    amount: 0.15, cost: { gold: 2200, fish: 800 } },
+  windmill: { id: 'windmill', name: 'Windmill',     emoji: '🌬️', blurb: 'The whole farm hums along.',     lever: 'farmRate',    amount: 0.10, cost: { gold: 3000, wood: 1500, acorns: 800 } },
+};
+export const LANDMARK_IDS: LandmarkId[] = Object.keys(LANDMARKS);
+export function getLandmark(id: string): Landmark | undefined { return LANDMARKS[id]; }
+
+// Lantern Festival — infinite tail, unlocked once all 8 landmarks are built.
+export const FESTIVAL_PROSPERITY_PER_LEVEL = 0.02; // +2% production per festival level
+export const FESTIVAL_BASE_COST: Resources = { gold: 4000, wood: 2000, acorns: 2000, fish: 1000 };
+export const FESTIVAL_COST_GROWTH = 1.15;          // per-level multiplier on every cost component

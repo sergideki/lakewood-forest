@@ -2,6 +2,7 @@ import type { GameState, CropId, BarnResource, Lifetime, Station } from './types
 import { CROPS } from './content';
 import { barnCapMult } from './town';
 import { petLeverMult } from './pets';
+import { landmarkLeverMult, prosperityMult } from './landmarks';
 import { bumpLifetime } from './lifetime';
 import { villagerBoost } from './villagers';
 
@@ -21,7 +22,8 @@ export function farmRatesPerSec(state: GameState): Record<BarnResource, number> 
   const rates = zeroRates();
   const boost = villagerBoost(state, 'farm');
   if (boost === 0) return rates;                       // gate: no farm villagers
-  const multiplier = boost * petLeverMult(state, 'farmRate');   // KEEP petLeverMult (crawdad buff)
+  // pet crawdad buff + Windmill landmark (farmRate) + Festival prosperity, all applied once each.
+  const multiplier = boost * petLeverMult(state, 'farmRate') * landmarkLeverMult(state, 'farmRate') * prosperityMult(state);
   for (const p of state.plots) {
     if (!p.crop) continue;
     const crop = CROPS[p.crop];

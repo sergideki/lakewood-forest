@@ -2,7 +2,7 @@ import type { GameState } from '../engine/types';
 import { createInitialState, makeCreature } from '../engine';
 import { DUNGEONS, STARTER_SPECIES, HABITATS, CROP_IDS, STARTER_CROPS, SPECIALTY_BY_ID } from '../engine/content';
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 interface SaveEnvelope {
   version: number;
@@ -63,7 +63,8 @@ function isValidBaseState(state: unknown): state is GameState {
   return true;
 }
 
-/** Additive migrations. v1(farm)->v2(forest)->v3(town)->v4(lake)->v5(crops)->v6(lifetime). Idempotent. */
+/** Additive migrations. v1(farm)->v2(forest)->v3(town)->v4(lake)->v5(crops)->v6(lifetime)
+ *  ->v7(villagers)->v8(village green). Idempotent. */
 function migrate(fromVersion: number, state: GameState): GameState {
   let s = state;
   if (fromVersion < 2) s = addForestFields(s);
@@ -74,6 +75,7 @@ function migrate(fromVersion: number, state: GameState): GameState {
   // blob with a partial lifetime object (e.g. a hand-edited import) still needs backfilling.
   s = addLifetimeCounters(s);
   s = addVillagerDepth(s);   // unconditional, per-field ?? — same discipline as addLifetimeCounters
+  s = addVillageGreen(s);    // unconditional, per-field ?? — 0 ?? 0 === 0 preserves a real festivalLevel
   return s;
 }
 
@@ -134,6 +136,13 @@ function addLifetimeCounters(old: GameState): GameState {
       fish: l?.fish ?? 0,
     },
   };
+}
+
+/** v7->v8: Village Green fields. Per-field ?? — 0 ?? 0 === 0 preserves a real festivalLevel 0
+ *  (|| would clobber it). isValidBaseState asserts neither field, so no pre-migration rejection. */
+function addVillageGreen(old: GameState): GameState {
+  const o = old as Partial<GameState>;
+  return { ...old, landmarks: o.landmarks ?? [], festivalLevel: o.festivalLevel ?? 0 };
 }
 
 /** v6->v7: villagers gain specialty/level/xp. Per-field ?? (never whole-object) so a partial blob

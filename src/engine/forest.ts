@@ -2,6 +2,7 @@ import type { GameState, Material, Rng } from './types';
 import { creatureForageOutput, rollDiscovery, teamPower, grantXp } from './creatures';
 import { getDungeon } from './content';
 import { satchelCapMult, forageMult } from './town';
+import { prosperityMult } from './landmarks';
 import { bumpLifetime } from './lifetime';
 import { villagerBoost } from './villagers';
 
@@ -14,7 +15,8 @@ export function forageRatePerSec(state: GameState, material: Material): number {
   const base = state.creatures
     .filter((c) => c.assignment.type === 'forage' && c.affinity === material)
     .reduce((sum, c) => sum + creatureForageOutput(c), 0);
-  return base * forageMult(state);
+  // prosperity applies here (shared seam) → covers forest satchel AND the fish foragers feeding the lake.
+  return base * forageMult(state) * prosperityMult(state);
 }
 
 /** Forest satchel rate for a material = pure forage output * this station's villager boost. */

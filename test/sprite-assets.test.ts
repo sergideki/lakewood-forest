@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { PET_IDS, CROP_IDS, SPECIES, createInitialState } from '../src/engine';
+import { PET_IDS, CROP_IDS, SPECIES, LANDMARK_IDS, createInitialState } from '../src/engine';
 
 const ROOT = join(__dirname, '..');
 
@@ -21,6 +21,7 @@ describe('sprite assets', () => {
     ['creatures', WATER_SPECIES],
     ['pets', PET_IDS],
     ['crops', CROP_IDS],
+    ['landmarks', LANDMARK_IDS],
   ];
   for (const [dir, ids] of mandatory) {
     for (const id of ids) {
@@ -48,7 +49,7 @@ describe('sprite assets', () => {
     );
     const known = new Set([
       ...Object.keys(SPECIES), // all creatures, land + water — derived, never stale
-      ...PET_IDS, ...CROP_IDS, ...VILLAGER_IDS,
+      ...PET_IDS, ...CROP_IDS, ...VILLAGER_IDS, ...LANDMARK_IDS,
     ]);
     let count = 0;
     for (const [, key, rel] of entries) {
