@@ -3,13 +3,23 @@ import { theme } from '../theme';
 import { cards } from '../styles';
 import { RARITY_COLOR } from '../rarity';
 import { useGameStore } from '../../store/gameStore';
-import { SPECIES, PETS, PET_IDS } from '../../engine';
+import { SPECIES, PETS, PET_IDS, PET_EFFECTS } from '../../engine';
+import type { PetLever } from '../../engine';
 import { PET_SPRITES } from '../sprites';
 import { CreatureIcon } from './CreatureIcon';
 import { SpriteIcon } from './SpriteIcon';
 
 const AFFINITY_EMOJI = { wood: '🪵', acorn: '🌰', fish: '🐟' } as const;
 const ALL_SPECIES = Object.values(SPECIES); // static catalog — build once at module load
+
+const LEVER_LABEL: Record<PetLever, string> = {
+  barnCap: 'barn',
+  satchelCap: 'satchel',
+  forageRate: 'forage',
+  creelCap: 'creel',
+  farmRate: 'farm',
+  catchChance: 'catch',
+};
 
 export function FriendsJournal() {
   // Subscribe to the STABLE slice only. zustand v5 (useSyncExternalStore) crashes
@@ -64,11 +74,15 @@ export function FriendsJournal() {
               </View>
             );
           }
+          const effect = PET_EFFECTS[id];
           return (
             <View key={id} style={styles.cell}>
               <SpriteIcon sprite={PET_SPRITES[id]} emoji={pet.emoji} size={48} />
               <Text style={styles.name}>{pet.name}</Text>
               <Text style={[styles.rarity, { color: RARITY_COLOR[pet.rarity] }]}>• {pet.rarity}</Text>
+              {effect && (
+                <Text style={styles.buff}>+{Math.round(effect.amount * 100)}% {LEVER_LABEL[effect.lever]}</Text>
+              )}
             </View>
           );
         })}
@@ -105,4 +119,5 @@ const styles = StyleSheet.create({
   name: { color: theme.text, fontSize: 14, fontWeight: '600', marginTop: 4 },
   rarity: { fontSize: 12, fontWeight: '600' },
   affinity: { color: theme.textDim, fontSize: 12 },
+  buff: { color: theme.textDim, fontSize: 11 },
 });
