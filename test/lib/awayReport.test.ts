@@ -62,4 +62,18 @@ describe('computeAwayReport', () => {
     const after = applyElapsed(before, now);
     expect(computeAwayReport(before, after, now)).toBeNull();
   });
+
+  it('returns null when the only gain is sub-1 (would render an empty floored card)', () => {
+    // Creel 0.5 below cap: a long gap fills just 0.5 fish (clamped to room), which floors to 0.
+    // Raw float gain > 0 but nothing renders → must be null (LOW from the Plan 7 code review).
+    const base = createInitialState(0);
+    const cap = creelCap(base);
+    const before: GameState = { ...base, storage: { ...base.storage, creel: { fish: cap - 0.5 } } };
+    const now = 3600 * 1000; // 1h, well past AWAY_MIN_SEC
+    const after = applyElapsed(before, now);
+    const gain = after.storage.creel.fish - before.storage.creel.fish;
+    expect(gain).toBeGreaterThan(0);
+    expect(gain).toBeLessThan(1);
+    expect(computeAwayReport(before, after, now)).toBeNull();
+  });
 });

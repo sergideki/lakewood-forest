@@ -44,10 +44,15 @@ export function computeAwayReport(before: GameState, after: GameState, now: numb
     .filter((h) => habitatStatus(before, h.id, wasLast) !== 'ready' && habitatStatus(after, h.id, now) === 'ready')
     .map((h) => h.id);
 
-  const anything =
-    barn.gold + barn.wood + barn.acorns + satchel.wood + satchel.acorn + creel.fish + marigoldFishDrained > 0 ||
-    readyDungeons.length > 0 ||
-    readyHabitats.length > 0;
+  // Gate on the FLOORED totals the UI actually renders (barn+satchel folded per resource, each
+  // floored), so a sub-1 float gain never yields a non-null report that displays an empty card.
+  const flooredGains =
+    Math.floor(barn.gold) +
+    Math.floor(barn.wood + satchel.wood) +
+    Math.floor(barn.acorns + satchel.acorn) +
+    Math.floor(creel.fish) +
+    Math.floor(marigoldFishDrained);
+  const anything = flooredGains > 0 || readyDungeons.length > 0 || readyHabitats.length > 0;
   if (!anything) return null;
 
   return { elapsedSec, barn, satchel, creel, marigoldFishDrained, readyDungeons, readyHabitats };
