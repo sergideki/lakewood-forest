@@ -2,7 +2,7 @@
   "expo": {
     "name": "Lakewood Forest",
     "slug": "lakewood-forest",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "scheme": "lakewood",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,7 +22,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "versionCode": 6
+      "versionCode": 7
     },
     "web": {
       "favicon": "./assets/favicon.png"
