@@ -26,11 +26,16 @@ export interface Plot {
   crop: CropId | null;
 }
 
+export type Station = 'farm' | 'forest' | 'lake';
+
 export interface Villager {
   id: string;
   name: string;
   emoji: string;
-  assignedTo: 'farm' | null;
+  specialty: Station;
+  level: number;
+  xp: number;
+  assignedTo: Station | null;
 }
 
 export type Rarity = 'common' | 'uncommon' | 'rare';

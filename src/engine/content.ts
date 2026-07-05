@@ -1,4 +1,4 @@
-import type { Crop, CropId, Species, SpeciesId, Dungeon, TownUpgrade, UpgradeId, Habitat, Pet, PetId, Resources } from './types';
+import type { Crop, CropId, Species, SpeciesId, Dungeon, TownUpgrade, UpgradeId, Habitat, Pet, PetId, Resources, Station } from './types';
 
 export const CROPS: Record<CropId, Crop> = {
   wheat:    { kind: 'producer', id: 'wheat',    name: 'Wheat',    emoji: '🌾', output: 'gold',   amount: 5, growSec: 100 },
@@ -112,3 +112,11 @@ export const PET_EFFECTS: Record<PetId, PetEffect> = {
 // --- Plan 7: repeatable wood -> fish Town trade (infinite wood sink; revives sapling) ---
 export const TRADE_WOOD_COST = 20; // 🪵 spent per trade
 export const TRADE_FISH_YIELD = 4; // 🐟 gained per trade (5:1)
+
+// --- Plan 9: villager depth (stations, specialty, leveling, recruit) ---
+export const VILLAGER_PER = 0.15;        // boost per villager-level (TUNABLE)
+export const VILLAGER_SPEC = 2;          // specialty match doubles contribution (TUNABLE)
+export const VILLAGER_XP_PER_SEC = 0.05; // XP/sec while assigned (TUNABLE)
+export const MAX_VILLAGERS = 8;
+export const VILLAGER_NAMES = ['Bram', 'Wren', 'Tansy', 'Milo', 'Fen', 'Ada', 'Rue', 'Sage', 'Bo', 'Ivy'];
+export const SPECIALTY_BY_ID: Record<string, Station> = { 'vil-1': 'farm', 'vil-2': 'forest', 'vil-3': 'lake' };
