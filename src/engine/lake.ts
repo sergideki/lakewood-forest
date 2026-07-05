@@ -13,15 +13,17 @@ import {
 } from './content';
 import { DISCOVERY_WEIGHT, makeCreature } from './creatures';
 import { forageRatePerSec } from './forest';
+import { petLeverMult, petCatchBonus } from './pets';
 
 /** Fish/sec = flat rod base + all fish-affinity foragers (creature part is forageMult-boosted). */
 export function fishRatePerSec(state: GameState): number {
   return BASE_ROD_RATE + forageRatePerSec(state, 'fish');
 }
 
-/** Creel capacity = a day of the current fish rate, floored. (No creel upgrade in v1.) */
+/** Creel capacity = a day of the current fish rate, floored, then lifted by pet creel bonus. */
 export function creelCap(state: GameState): number {
-  return Math.max(CREEL_FLOOR, Math.round(fishRatePerSec(state) * CREEL_HOURS * 3600));
+  const base = Math.max(CREEL_FLOOR, Math.round(fishRatePerSec(state) * CREEL_HOURS * 3600));
+  return Math.round(base * petLeverMult(state, 'creelCap'));
 }
 
 /** Fill the creel by the fish rate over elapsedSec, clamped to cap. Immutable. */
@@ -59,11 +61,15 @@ function marigoldCount(state: GameState): number {
   return state.plots.filter((p) => p.crop === 'marigold').length;
 }
 
-/** Effective pet catch chance: base + marigold bonus (only while fish remain), clamped. */
+/** Effective pet catch chance: marigold-clamped base, THEN pet catch bonus on top, capped at 1.
+ *  Pet bonus is applied AFTER the marigold clamp so a rare-caught Pond Newt is never swallowed by
+ *  MARIGOLD_CATCH_CAP (skeptic F1). */
 export function creelCatchChance(state: GameState): number {
   const n = marigoldCount(state);
-  if (n === 0 || state.resources.fish <= 0) return CATCH_CHANCE;
-  return Math.min(CATCH_CHANCE + MARIGOLD_CATCH_BONUS * n, MARIGOLD_CATCH_CAP);
+  const marigoldChance = n === 0 || state.resources.fish <= 0
+    ? CATCH_CHANCE
+    : Math.min(CATCH_CHANCE + MARIGOLD_CATCH_BONUS * n, MARIGOLD_CATCH_CAP);
+  return Math.min(1, marigoldChance + petCatchBonus(state));
 }
 
 /** Drain fish for planted marigolds over elapsedSec, clamped at 0. Immutable. No-op if none/≤0. */

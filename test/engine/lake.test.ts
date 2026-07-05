@@ -275,3 +275,27 @@ describe('collectCreel marigold dormancy (integrated)', () => {
     expect(collectCreel(threeMarigolds(0), midRng).pets.length).toBe(0);
   });
 });
+
+describe('pet bonuses feed lake', () => {
+  it('pebbleturtle lifts creel cap by 8% (re-rounded)', () => {
+    const base = createInitialState(0);
+    const capBase = creelCap(base);            // floor 200 at zero rate
+    const capPet = creelCap({ ...base, pets: ['pebbleturtle'] });
+    expect(capPet).toBe(Math.round(capBase * 1.08));
+  });
+  it('pondnewt adds +3% catch chance, applied AFTER the marigold clamp', () => {
+    const base = createInitialState(0);
+    // no marigold → base 0.25 + 0.03
+    expect(creelCatchChance({ ...base, pets: ['pondnewt'] })).toBeCloseTo(0.28, 10);
+  });
+  it('pondnewt bonus survives even at the marigold cap (0.50 + 0.03)', () => {
+    const base = createInitialState(0);
+    // 5 marigold plots + fish in the pond → marigold term clamps to 0.50, pet adds on top
+    const plots = Array.from({ length: 5 }, (_, i) => ({ id: `p${i}`, crop: 'marigold' }));
+    const s = { ...base, plots, resources: { ...base.resources, fish: 100 }, pets: ['pondnewt'] };
+    expect(creelCatchChance(s)).toBeCloseTo(0.53, 10);
+  });
+  it('no-pet catch chance is unchanged (0.25 base)', () => {
+    expect(creelCatchChance(createInitialState(0))).toBe(0.25);
+  });
+});
