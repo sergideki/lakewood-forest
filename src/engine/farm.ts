@@ -1,6 +1,7 @@
 import type { GameState, CropId, BarnResource } from './types';
 import { CROPS } from './content';
 import { barnCapMult } from './town';
+import { petLeverMult } from './pets';
 
 /** The barn holds this many hours of the current production rate before it's "full". */
 export const BARN_HOURS = 24;
@@ -18,7 +19,7 @@ export function farmRatesPerSec(state: GameState): Record<BarnResource, number> 
   const rates = zeroRates();
   const assigned = state.villagers.filter((v) => v.assignedTo === 'farm').length;
   if (assigned === 0) return rates;
-  const multiplier = 1 + 0.25 * (assigned - 1);
+  const multiplier = (1 + 0.25 * (assigned - 1)) * petLeverMult(state, 'farmRate');
   for (const p of state.plots) {
     if (!p.crop) continue;
     const crop = CROPS[p.crop];

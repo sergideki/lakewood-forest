@@ -145,3 +145,14 @@ describe('collectBarn', () => {
     expect(s.storage.barn.acorns).toBeCloseTo(0.2, 5);
   });
 });
+
+describe('crawdad lifts farm rate', () => {
+  it('scales every producer rate by +10%', () => {
+    let s = createInitialState(0);
+    s = assignVillager(s, 'vil-1', 'farm');
+    s = plantCrop({ ...s, unlockedCrops: ['wheat'] }, 'plot-1', 'wheat');
+    const rateBase = farmRatesPerSec(s).gold;
+    const ratePet = farmRatesPerSec({ ...s, pets: ['crawdad'] }).gold;
+    expect(ratePet).toBeCloseTo(rateBase * 1.10, 10);
+  });
+});
