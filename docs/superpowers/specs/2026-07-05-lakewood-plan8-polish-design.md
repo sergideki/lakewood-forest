@@ -21,8 +21,13 @@ changes and there are no per-frame re-renders. The two-frame approach would doub
 (27→54 PNGs), grow the APK, and add 27 registry lines for a bob the eye can barely tell apart.
 
 **Design:**
-- A single module-level `Animated.Value` in `SpriteIcon.tsx`, started ONCE at module load with
-  `Animated.loop(Animated.sequence([timing(→1), timing(→0)]))`, `useNativeDriver: true`.
+- A single module-level `Animated.Value` in `SpriteIcon.tsx`. The `Animated.loop(Animated.sequence(
+  [timing(→1), timing(→0)]))` (`useNativeDriver: true`) is **lazy-started on the first render** via a
+  module-level `let started = false` guard (`if (!started) { started = true; loop.start() }`), NOT at
+  import time. This keeps module import side-effect-free — critical because vitest runs in a `node`
+  environment with no `requestAnimationFrame`, so an import-time RAF loop would crash any test that
+  ever imports this file (directly or transitively via FriendsJournal/MilestonesSection). Lazy-start
+  only fires inside a real RN / RN-web runtime that has RAF.
 - `SpriteIcon` wraps its existing `Image`/`Text` in an `Animated.View` whose `transform` maps the
   shared value `0→1` to `translateY: 0 → −1.5px → 0` via `interpolate`. Amplitude deliberately tiny
   (gentle breathing, not a bounce).
@@ -68,8 +73,14 @@ the ONLY new persisted state. Everything else a milestone needs is already in st
 ### Save migration v5 → v6 (additive)
 
 - `SAVE_VERSION = 6`.
-- New `addLifetimeCounters(old)` migration: backfills `lifetime: { gold:0, wood:0, acorns:0, fish:0 }`
-  when absent (idempotent — keeps an existing object). Chained after `addCropRework`.
+- New `addLifetimeCounters(old)` migration: backfills **per field with `??`** exactly like the sibling
+  `addForestFields`/`addLakeFields` migrations — `lifetime: { gold: old.lifetime?.gold ?? 0, wood:
+  old.lifetime?.wood ?? 0, acorns: old.lifetime?.acorns ?? 0, fish: old.lifetime?.fish ?? 0 }`. A
+  whole-object presence check ("seed only if absent") is WRONG here: `tryDeserialize`/Import run only
+  the loose `isValidBaseState`, which doesn't validate `lifetime`'s shape, so a partial blob
+  (`{lifetime:{gold:5}}`) would survive and the first `bumpLifetime` on a missing field does
+  `undefined + n = NaN` (which JSON-serializes to `null`, so it never self-heals). Per-field `??` is
+  the only safe form. Chained after `addCropRework`.
 - `isValidBaseState` stays PRE-migration-safe: it must NOT assert `lifetime` exists (a real v5 save
   has none), or it would fail-and-wipe every v5 save — the exact trap the crop-rework migration
   already documents.
@@ -151,6 +162,34 @@ and overwrite the same PNG filenames (`assets/pets/pebbleturtle.png`, `assets/cr
 `python3 scripts/gen-sprites.py <group>`. Done last, after items 1–2 land.
 
 ---
+
+## Skeptic-hardening notes (doubt-driven cycle 1, 2026-07-05)
+
+Ground-truth findings folded in so the build doesn't rediscover them:
+
+- **Update the version-pin test.** `test/persistence/save.test.ts` asserts `expect(SAVE_VERSION).toBe(5)`
+  — change to `6` in the same task that bumps the constant, or the green suite breaks. Add a v5→v6
+  migration case alongside it.
+- **`acorn` vs `acorns` plural trap.** `Storage.satchel`/`Material` use singular `acorn` (local
+  `bankAcorn` in `collectSatchel`); `Resources` and the new `lifetime` use plural `acorns`. `bumpLifetime`
+  must write `lifetime.acorns` from the singular `bankAcorn` value — an easy transcription slip.
+- **`bumpLifetime` consumes the SAME floored variable** used for the resource increment (never a
+  re-derived value), and runs AFTER each collect's `bank <= 0` early return — so the carry-remainder
+  pattern composes correctly and a second collect can't double-count.
+- **MilestonesSection selector rule (zustand v5).** Subscribe a STABLE slice — `useGameStore(s => s.state)`
+  (or the individual primitive slices `discovered`/`pets`/`creatures`/`upgrades`/`lifetime`) — and run
+  `ACHIEVEMENTS.map(a => a.progress(state))` in the COMPONENT BODY. Never build the derived array inside
+  the selector (the documented "getSnapshot should be cached" mount crash, already called out in
+  `FriendsJournal.tsx:25`).
+- **vitest import guardrail.** No test may import `SpriteIcon.tsx`, `FriendsJournal.tsx`, or
+  `MilestonesSection.tsx` — the node test env has no RAF. `achievements.test.ts` imports ONLY the pure
+  engine module; `sprite-assets.test.ts` stays fs-only.
+- **Accepted trade-offs (not bugs):** the bob applies to every SpriteIcon consumer (crops, villagers,
+  toasts) by design — "every sprite breathes"; locked `❔` journal cells render raw `<Text>` and won't
+  bob. The module-level loop has no teardown, so Metro Fast Refresh can orphan a loop while editing
+  `SpriteIcon.tsx` — a dev-only cosmetic leak, gone on full reload; not shipped behavior.
+- **`useNativeDriver:true` on RN-web is safe:** react-native-web warns once and falls back to the JS
+  driver for `translateY`; it does not crash. Android uses the real native driver.
 
 ## Sequencing
 
