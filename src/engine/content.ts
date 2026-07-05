@@ -93,3 +93,22 @@ export const BASE_ROD_RATE = 0.05; // fish/sec with zero water creatures (bootst
 export const CREEL_HOURS = 24;     // creel holds ~a day of the current fish rate
 export const CREEL_FLOOR = 200;    // minimum creel capacity
 export const CATCH_CHANCE = 0.25;  // chance to catch a pet per NON-EMPTY creel collect
+
+// --- Plan 7: pet passive bonuses (derived from state.pets; no save fields) ---
+export type PetLever = 'barnCap' | 'satchelCap' | 'creelCap' | 'forageRate' | 'farmRate' | 'catchChance';
+export interface PetEffect { lever: PetLever; amount: number; }
+
+/** Each caught pet grants one small permanent global buff. Each touches a DIFFERENT lever so
+ *  completing the 6-set rewards every subsystem. Additive; a pet is caught at most once. */
+export const PET_EFFECTS: Record<PetId, PetEffect> = {
+  pondsnail:    { lever: 'barnCap',     amount: 0.05 },
+  waterbeetle:  { lever: 'satchelCap',  amount: 0.05 },
+  dragonfly:    { lever: 'forageRate',  amount: 0.08 },
+  pebbleturtle: { lever: 'creelCap',    amount: 0.08 },
+  crawdad:      { lever: 'farmRate',    amount: 0.10 },
+  pondnewt:     { lever: 'catchChance', amount: 0.03 },
+};
+
+// --- Plan 7: repeatable wood -> fish Town trade (infinite wood sink; revives sapling) ---
+export const TRADE_WOOD_COST = 20; // 🪵 spent per trade
+export const TRADE_FISH_YIELD = 4; // 🐟 gained per trade (5:1)
