@@ -156,3 +156,10 @@ describe('crawdad lifts farm rate', () => {
     expect(ratePet).toBeCloseTo(rateBase * 1.10, 10);
   });
 });
+
+it('collectBarn bumps lifetime by the floored bank per resource', () => {
+  const base = createInitialState(0);
+  const s = { ...base, storage: { ...base.storage, barn: { gold: 10.9, wood: 3.2, acorns: 0 } } };
+  const out = collectBarn(s);
+  expect(out.lifetime).toEqual({ gold: 10, wood: 3, acorns: 0, fish: 0 });
+});

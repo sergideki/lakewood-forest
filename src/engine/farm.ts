@@ -1,7 +1,8 @@
-import type { GameState, CropId, BarnResource } from './types';
+import type { GameState, CropId, BarnResource, Lifetime } from './types';
 import { CROPS } from './content';
 import { barnCapMult } from './town';
 import { petLeverMult } from './pets';
+import { bumpLifetime } from './lifetime';
 
 /** The barn holds this many hours of the current production rate before it's "full". */
 export const BARN_HOURS = 24;
@@ -64,13 +65,16 @@ export function accrueBarn(state: GameState, elapsedSec: number): GameState {
 export function collectBarn(state: GameState): GameState {
   const barn = { ...state.storage.barn };
   const resources = { ...state.resources };
+  const gained: Partial<Lifetime> = {};
   for (const res of BARN_RESOURCES) {
     const banked = Math.floor(barn[res]);
     if (banked <= 0) continue;
     resources[res] += banked;
     barn[res] -= banked;
+    gained[res] = banked;
   }
-  return { ...state, resources, storage: { ...state.storage, barn } };
+  const next = { ...state, resources, storage: { ...state.storage, barn } };
+  return bumpLifetime(next, gained);
 }
 
 /** Set a plot's crop. Rejects (returns state unchanged) a crop not in unlockedCrops. */
