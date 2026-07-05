@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, plantCrop } from '../../src/engine';
-import { villagerBoost } from '../../src/engine/villagers';
+import { villagerBoost, villagerXpForLevel, grantVillagerXp, dripVillagerXp } from '../../src/engine/villagers';
 import { farmRatesPerSec } from '../../src/engine/farm';
 import { fishRatePerSec } from '../../src/engine/lake';
 import type { GameState, Station } from '../../src/engine/types';
@@ -50,5 +50,25 @@ describe('station wiring', () => {
     let s = createInitialState(0);
     s = plantCrop(s, 'plot-1', 'wheat');
     expect(farmRatesPerSec(s).gold).toBe(0);
+  });
+});
+
+describe('villager leveling', () => {
+  it('villagerXpForLevel grows per level', () => {
+    expect(villagerXpForLevel(1)).toBe(60);
+    expect(villagerXpForLevel(2)).toBe(Math.round(60 * 1.35));
+  });
+  it('grantVillagerXp levels up and carries remainder', () => {
+    const v = { id: 'x', name: 'x', emoji: '', specialty: 'farm' as const, level: 1, xp: 0, assignedTo: 'farm' as const };
+    const out = grantVillagerXp(v, 65); // 60 to L2, 5 carried
+    expect(out.level).toBe(2);
+    expect(out.xp).toBe(5);
+  });
+  it('dripVillagerXp only feeds ASSIGNED villagers', () => {
+    let s = createInitialState(0);
+    s = { ...s, villagers: s.villagers.map((v) => (v.id === 'vil-1' ? { ...v, assignedTo: 'farm' } : v)) };
+    const out = dripVillagerXp(s, 100); // 0.05*100 = 5 xp to vil-1 only
+    expect(out.villagers.find((v) => v.id === 'vil-1')!.xp).toBe(5);
+    expect(out.villagers.find((v) => v.id === 'vil-2')!.xp).toBe(0); // resting
   });
 });

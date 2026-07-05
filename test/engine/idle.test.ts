@@ -38,7 +38,9 @@ describe('applyElapsed', () => {
     const s0 = activeFarm(0);
     const week = 7 * 24 * 3600 * 1000;
     const s1 = applyElapsed(s0, week);
-    expect(s1.storage.barn.gold).toBe(barnCap(s1).gold);
+    // Cap is sampled at accrual time (window-start, pre-drip): accrueBarn fills to s0's cap
+    // before drip-last leveling raises the villager's boost, so the end-state cap is higher.
+    expect(s1.storage.barn.gold).toBe(barnCap(s0).gold);
   });
 
   it('does not mutate its input (immutability)', () => {
@@ -48,6 +50,12 @@ describe('applyElapsed', () => {
     expect(s0.meta.lastSeen).toBe(before); // input untouched
     expect(s0.storage.barn.gold).toBe(0);
     expect(result).not.toBe(s0);
+  });
+
+  it('applyElapsed drips XP to assigned villagers', () => {
+    const s0 = activeFarm(1_000); // assigns vil-1 to farm
+    const s1 = applyElapsed(s0, 1_000 + 100_000); // +100s
+    expect(s1.villagers.find((v) => v.id === 'vil-1')!.xp).toBeGreaterThan(0);
   });
 });
 
