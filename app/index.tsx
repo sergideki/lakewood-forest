@@ -7,11 +7,14 @@ import { ResourceBar } from '../src/ui/components/ResourceBar';
 import { BarnCard } from '../src/ui/components/BarnCard';
 import { PlotGrid } from '../src/ui/components/PlotGrid';
 import { VillagerRow } from '../src/ui/components/VillagerRow';
+import { AwaySummary } from '../src/ui/components/AwaySummary';
 
 export default function Home() {
   const loaded = useGameStore((s) => s.loaded);
   const tick = useGameStore((s) => s.tick);
   const save = useGameStore((s) => s.save);
+  const awayReport = useGameStore((s) => s.awayReport);
+  const dismissAwayReport = useGameStore((s) => s.dismissAwayReport);
 
   // Live barn fill while the app is open (visual), plus a hard catch-up on foreground.
   // Persistence happens on backgrounding, not every tick.
@@ -40,6 +43,7 @@ export default function Home() {
         <PlotGrid />
         <VillagerRow />
       </ScrollView>
+      {awayReport && <AwaySummary report={awayReport} onDismiss={dismissAwayReport} />}
     </SafeAreaView>
   );
 }
