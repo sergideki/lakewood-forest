@@ -32,7 +32,7 @@ export interface AwayReport {
   barn:    { gold: number; wood: number; acorns: number }; // storage.barn gains (≥0)
   satchel: { wood: number; acorn: number };                // storage.satchel gains (≥0)
   creel:   { fish: number };                               // storage.creel gain (≥0)
-  marigoldFishDrained: number;                             // resources.fish DECREASE (≥0), cozy line
+  marigoldFishDrained: number;                             // resources.fish DECREASE (≥0), framed as a cozy "sip"
   readyDungeons: string[];                                 // dungeon ids that flipped not-ready → ready
   readyHabitats: string[];                                 // habitat ids that flipped attracting → ready
 }
@@ -40,6 +40,10 @@ export interface AwayReport {
 export function computeAwayReport(before: GameState, after: GameState, now: number): AwayReport | null;
 ```
 
+- **`elapsedSec = Math.max(0, (now − before.meta.lastSeen) / 1000)`** — pinned. MUST use
+  `before.meta.lastSeen`, NOT `after.meta.lastSeen` (applyElapsed sets the latter to
+  `max(now, lastSeen)` = `now`, which would make the gap always 0). Clock rollback (`now <
+  before.lastSeen`) → 0 → suppressed by the guard.
 - Returns `null` when `elapsedSec < AWAY_MIN_SEC` (60) **or** every field is empty/zero (no
   gains, no newly-ready). A null report means "don't show the card."
 - Storage gains are `max(0, after − before)` per bucket (fractional storage is fine; the card
@@ -74,6 +78,9 @@ newly-ready runs. Single "Nice!" dismiss button → `dismissAwayReport()`. Shown
 
 - Duration format: reuse/extend any existing humanizer; else inline `Xh Ym` / `Ym` / `<1m`.
 - Empty deltas are omitted (only nonzero lines render).
+- `marigoldFishDrained` is framed gently ("🌼 marigolds sipped X🐟"), never as a red/loss line —
+  it's expected upkeep. A long absence can drain a stocked pond to 0, so this number can be large
+  and true; the cozy framing (and its placement below the gains) keeps it from reading as a loss.
 
 ### YAGNI
 No "collect all" button (collection stays per-screen), no history, no settings toggle.
@@ -120,9 +127,12 @@ export function petCatchBonus(state: GameState): number; // ≥0, additive
 ### Wiring (each existing lever gains a pet factor)
 - `barnCapMult(state)` → `(1 + 0.5*L) * petLeverMult(state,'barnCap')` (town.ts)
 - `satchelCapMult(state)` → `(1 + 0.5*L) * petLeverMult(state,'satchelCap')` (town.ts)
-- `forageMult(state)` → `(1 + 0.15*L) * petLeverMult(state,'forageRate')` (town.ts) — this already
-  flows into both forage rate and, via `fishRatePerSec`, the fish rate + creel cap. **Dragonfly's
-  forageRate buff therefore also lifts fishing** (intended: one bonus, whole forage/fish chain).
+- `forageMult(state)` → `(1 + 0.15*L) * petLeverMult(state,'forageRate')` (town.ts) — `forageMult`
+  multiplies the *creature* forage output for ALL materials (wood/acorn/fish). **Dragonfly always
+  boosts land foraging** (the player starts with 2 land foragers), and additionally lifts the fish
+  rate + creel cap *when a fish-affinity creature is assigned* (the flat `BASE_ROD_RATE` component
+  of `fishRatePerSec` is NOT multiplied — lake.ts:19). UI copy: "+8% forage" (accurate for the
+  always-on land effect); don't claim it as a fishing buff unconditionally.
 - `creelCap(state)` (lake.ts) → multiply the final rounded cap by `petLeverMult(state,'creelCap')`.
   Applied AFTER the existing `Math.round(... )`; re-round. Pebble Turtle's creel buff is
   independent of Dragonfly's (creel cap already scales with rate via forageMult; this adds a
@@ -130,11 +140,21 @@ export function petCatchBonus(state: GameState): number; // ≥0, additive
 - `farmRatesPerSec(state)` (farm.ts) → multiply every per-resource rate by
   `petLeverMult(state,'farmRate')`. This lifts both production AND barn cap (barnCap derives from
   rate) — acceptable and thematic for Crawdad.
-- `creelCatchChance(state)` (lake.ts) → base becomes `CATCH_CHANCE + petCatchBonus(state)` BEFORE
-  the marigold term; still clamped by `MARIGOLD_CATCH_CAP` when marigolds are planted. When no
-  marigold: `min(1, CATCH_CHANCE + petCatchBonus)` (a flat +3% can't need the marigold cap, but
-  clamp to 1 defensively). **Pond Newt slightly raises the odds of catching the remaining pets —
-  intended cozy "collection momentum".**
+- `creelCatchChance(state)` (lake.ts) → **apply `petCatchBonus` AFTER the marigold clamp, not
+  before.** `MARIGOLD_CATCH_CAP = 0.50` binds at 5 marigolds (0.25 + 5×0.05), so folding the pet
+  bonus into the pre-clamp base makes it inert exactly when it's caught (Pond Newt is rare = late,
+  by which point marigolds are usually maxed — skeptic F1). Correct form:
+  ```ts
+  const marigoldChance = n === 0 || fish <= 0
+    ? CATCH_CHANCE
+    : Math.min(CATCH_CHANCE + MARIGOLD_CATCH_BONUS * n, MARIGOLD_CATCH_CAP);
+  return Math.min(1, marigoldChance + petCatchBonus(state));
+  ```
+  Pet bonus is a separate source and is allowed to push the total above the marigold-only cap of
+  0.50 (final clamp is 1.0). **Pond Newt therefore always adds its +3% to the odds of catching the
+  remaining pets — intended cozy "collection momentum," and it works even at max marigolds.**
+  The PRE-bank measurement in `collectCreel` (lake.ts:94) reads `state.pets`, identical pre/post
+  bank, so the bonus is stable across the collect.
 
 ### Precedence / ordering note (skeptic bait — call it out)
 Pet mults compose multiplicatively with upgrade mults. Order within a function does not matter for
@@ -166,7 +186,7 @@ loop.
 ### Mechanics (pure `tradeWoodForFish` in town.ts)
 ```
 TRADE_WOOD_COST = 20   // 🪵 spent per trade
-TRADE_FISH_YIELD = 5   // 🐟 gained per trade
+TRADE_FISH_YIELD = 4   // 🐟 gained per trade  (5:1 wood:fish)
 ```
 ```ts
 export function canTradeWoodForFish(state: GameState): boolean; // wood >= TRADE_WOOD_COST
@@ -174,18 +194,27 @@ export function tradeWoodForFish(state: GameState): GameState;   // no-op (same 
 ```
 Repeatable, no cooldown, no cap. Touches only `resources.wood`/`resources.fish` → **save-safe.**
 
-### Balance check (documented, not enforced)
-A sapling plot yields ~120🪵/hr → ~30🐟/hr via this trade — below one marigold's ~72🐟/hr drain,
-so it supplements the fish economy without trivializing habitats (20–150🐟) or making marigold a
-free perpetual boost. 4:1 wood:fish is the tunable ratio.
+### Balance check (documented, not enforced — realistic-investment math)
+Sapling yields `6/180 = 0.0333🪵/s` per plot × farm-villager multiplier `(1 + 0.25*(v−1))`.
+At **5:1** (20🪵→4🐟):
+- 1 sapling plot, 1 villager: ~120🪵/hr → ~24🐟/hr.
+- **2 sapling plots, 3 villagers** (heavy-investment case the game supports — 8 plots max, 3
+  villagers): `0.0333×2×1.5 = 0.1🪵/s` = 360🪵/hr → ~72🐟/hr ≈ **one marigold's ~72🐟/hr drain**.
+So even at heavy sapling investment the trade only breaks even with a single marigold rather than
+out-feeding it (the 4:1 ratio in the first draft over-fed at scale — skeptic F2). The wood→fish
+sink stays a genuine supplement without turning marigold into a free perpetual catch boost —
+and note marigold's catch value is self-limiting anyway (once all 6 pets are caught the pool is
+empty and marigold becomes a pure fish sink you'd un-plant). 5:1 is the tunable ratio.
 
 ### UI
 New card on `app/town.tsx` below `TreatsCard`: label + cost/yield + a "Trade" button (disabled when
-`!canTradeWoodForFish`). Wire a store action `tradeWood()` → `commit(tradeWoodForFish(applyElapsed(...)))`.
+`!canTradeWoodForFish`). Wire a store action `tradeWood()` →
+`commit(tradeWoodForFish(applyElapsed(get().state, Date.now())))` — spell out the `Date.now()`
+timestamp (every other store action passes it; don't drop it — skeptic F6).
 
 ### Tests
-`test/engine/town.test.ts` (extend): affordable trade deducts 20🪵 / adds 5🐟; unaffordable is a
-no-op same-ref; repeatable (two trades = −40🪵/+10🐟).
+`test/engine/town.test.ts` (extend): affordable trade deducts 20🪵 / adds 4🐟; unaffordable is a
+no-op same-ref; repeatable (two trades = −40🪵/+8🐟).
 
 ---
 
