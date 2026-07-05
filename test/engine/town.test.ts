@@ -165,3 +165,21 @@ describe('multipliers wired into caps and rates', () => {
     expect(Number.isInteger(satchelCap(boosted))).toBe(true);
   });
 });
+
+describe('pet bonuses feed town mults', () => {
+  it('pondsnail lifts barnCapMult by 5%', () => {
+    const base = createInitialState(0);
+    expect(barnCapMult({ ...base, pets: ['pondsnail'] })).toBeCloseTo(1.05, 10);
+    expect(barnCapMult(base)).toBe(1); // no-pet unchanged
+  });
+  it('waterbeetle lifts satchelCapMult, dragonfly lifts forageMult', () => {
+    const base = createInitialState(0);
+    expect(satchelCapMult({ ...base, pets: ['waterbeetle'] })).toBeCloseTo(1.05, 10);
+    expect(forageMult({ ...base, pets: ['dragonfly'] })).toBeCloseTo(1.08, 10);
+  });
+  it('pet mult composes multiplicatively with an upgrade level', () => {
+    const base = createInitialState(0);
+    const s = { ...base, pets: ['pondsnail'], upgrades: { 'barn-silo': 2 } }; // (1+0.5*2)*1.05
+    expect(barnCapMult(s)).toBeCloseTo(2 * 1.05, 10);
+  });
+});

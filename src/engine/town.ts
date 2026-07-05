@@ -1,6 +1,7 @@
 import type { GameState, Resources, UpgradeId, CropId } from './types';
 import { UPGRADES, TREAT_COST_ACORNS, TREAT_XP, CROPS, CROP_UNLOCK_COST } from './content';
 import { grantXp } from './creatures';
+import { petLeverMult } from './pets';
 
 /** Owned level of an upgrade; tolerates pre-v3 states with no `upgrades` field. */
 export function upgradeLevel(state: GameState, id: UpgradeId): number {
@@ -62,15 +63,15 @@ export function buyTreat(state: GameState, creatureId: string): GameState {
 }
 
 export function barnCapMult(state: GameState): number {
-  return 1 + 0.5 * upgradeLevel(state, 'barn-silo');
+  return (1 + 0.5 * upgradeLevel(state, 'barn-silo')) * petLeverMult(state, 'barnCap');
 }
 
 export function satchelCapMult(state: GameState): number {
-  return 1 + 0.5 * upgradeLevel(state, 'satchel-stitch');
+  return (1 + 0.5 * upgradeLevel(state, 'satchel-stitch')) * petLeverMult(state, 'satchelCap');
 }
 
 export function forageMult(state: GameState): number {
-  return 1 + 0.15 * upgradeLevel(state, 'forage-tools');
+  return (1 + 0.15 * upgradeLevel(state, 'forage-tools')) * petLeverMult(state, 'forageRate');
 }
 
 /** True if the crop exists, isn't already unlocked, and every resource component is affordable. */
