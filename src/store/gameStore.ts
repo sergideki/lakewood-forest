@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { GameState, CropId, SpeciesId, PetId } from '../engine/types';
+import type { GameState, CropId, SpeciesId, PetId, Station } from '../engine/types';
 import {
   createInitialState,
   plantCrop,
@@ -35,7 +35,7 @@ interface GameStore {
   tick: (now: number) => void;
   plant: (plotId: string, cropId: CropId | null) => void;
   unlockCrop: (cropId: CropId) => void;
-  assign: (villagerId: string, to: 'farm' | null) => void;
+  assign: (villagerId: string, to: Station | null) => void;
   collect: () => void;
   assignCreatureTo: (creatureId: string, to: 'idle' | 'forage') => void;
   startDungeon: (dungeonId: string, creatureIds: string[]) => void;

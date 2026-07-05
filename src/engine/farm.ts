@@ -1,4 +1,4 @@
-import type { GameState, CropId, BarnResource, Lifetime } from './types';
+import type { GameState, CropId, BarnResource, Lifetime, Station } from './types';
 import { CROPS } from './content';
 import { barnCapMult } from './town';
 import { petLeverMult } from './pets';
@@ -90,7 +90,7 @@ export function plantCrop(state: GameState, plotId: string, cropId: CropId | nul
 export function assignVillager(
   state: GameState,
   villagerId: string,
-  to: 'farm' | null,
+  to: Station | null,
 ): GameState {
   return {
     ...state,
