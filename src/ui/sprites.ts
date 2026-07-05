@@ -1,5 +1,5 @@
 import type { ImageSourcePropType } from 'react-native';
-import type { SpeciesId, PetId, CropId } from '../engine/types';
+import type { SpeciesId, PetId, CropId, LandmarkId } from '../engine/types';
 
 /**
  * Creature sprite registry. One line per landed PNG; a species absent here
@@ -49,4 +49,16 @@ export const VILLAGER_SPRITES: Partial<Record<string, ImageSourcePropType>> = {
   'vil-1': require('../../assets/villagers/vil-1.png'),
   'vil-2': require('../../assets/villagers/vil-2.png'),
   'vil-3': require('../../assets/villagers/vil-3.png'),
+};
+
+/** Landmark building sprites (Plan 10). Every entry must point at a file that EXISTS. */
+export const LANDMARK_SPRITES: Partial<Record<LandmarkId, ImageSourcePropType>> = {
+  bakery: require('../../assets/landmarks/bakery.png'),
+  fountain: require('../../assets/landmarks/fountain.png'),
+  lanterns: require('../../assets/landmarks/lanterns.png'),
+  bridge: require('../../assets/landmarks/bridge.png'),
+  gazebo: require('../../assets/landmarks/gazebo.png'),
+  market: require('../../assets/landmarks/market.png'),
+  koipond: require('../../assets/landmarks/koipond.png'),
+  windmill: require('../../assets/landmarks/windmill.png'),
 };

@@ -580,6 +580,222 @@ def draw_vil_3():  # Rowan — brown beard, tousled hair, mustard tunic
     return outline(img)
 
 
+# ---------------------------------------------------- landmarks (8)
+
+def draw_bakery():
+    img, d = canvas()
+    W = (226, 200, 156)   # cream wall
+    R = (190, 98, 76)     # red-brown roof
+    DR = (150, 104, 64)   # wood door
+    GL = (150, 182, 202)  # window glass
+    L = (214, 168, 96)    # bread-loaf sign
+    # wall
+    d.rectangle([156, 262, 356, 452], fill=band(W, 1))
+    checker(d, [172, 300, 340, 440], band(W, 't'))
+    d.chord([158, 264, 354, 340], 195, 345, fill=band(W, 0))
+    # pitched roof, overhanging the wall
+    d.polygon([(120, 268), (392, 268), (330, 150), (182, 150)], fill=band(R, 1))
+    d.polygon([(120, 268), (256, 268), (256, 150), (182, 150)], fill=band(R, 0))
+    d.polygon([(256, 268), (392, 268), (330, 150)], fill=band(R, 2))
+    # door
+    d.rounded_rectangle([224, 350, 286, 452], radius=28, fill=band(DR, 1))
+    d.chord([226, 352, 284, 410], 195, 345, fill=band(DR, 0))
+    d.ellipse([272, 398, 284, 410], fill=band(DR, 3))   # knob
+    # window with a top-lit pane
+    d.rounded_rectangle([288, 300, 342, 352], radius=10, fill=band(GL, 1))
+    d.chord([290, 302, 340, 328], 195, 345, fill=band(GL, 0))
+    # round loaf sign over the door
+    d.ellipse([224, 296, 288, 340], fill=band(L, 1))
+    d.arc([234, 304, 278, 332], 200, 340, fill=band(L, 2), width=7)
+    return outline(img)
+
+
+def draw_fountain():
+    img, d = canvas()
+    S = (192, 190, 182)   # stone
+    WA = (128, 178, 208)  # water
+    # lower basin
+    d.ellipse([96, 392, 416, 460], fill=band(S, 1))
+    d.chord([100, 420, 412, 460], 15, 165, fill=band(S, 2))
+    # water pooled in the basin
+    d.ellipse([132, 398, 380, 438], fill=band(WA, 1))
+    d.chord([140, 400, 372, 424], 195, 345, fill=band(WA, 0))
+    # pedestal
+    d.rectangle([232, 300, 280, 404], fill=band(S, 1))
+    d.chord([234, 302, 278, 340], 195, 345, fill=band(S, 0))
+    # upper bowl
+    d.ellipse([176, 294, 336, 340], fill=band(S, 1))
+    d.chord([180, 320, 332, 342], 15, 165, fill=band(S, 2))
+    # water plume rising up the centre
+    d.rounded_rectangle([244, 206, 268, 306], radius=12, fill=band(WA, 1))
+    for dxp in (-30, 0, 30):
+        d.ellipse([256 + dxp - 11, 188, 256 + dxp + 11, 214], fill=band(WA, 0))
+    # streams falling from the upper bowl into the basin
+    for sx in (-1, 1):
+        d.line([256 + sx * 64, 328, 256 + sx * 92, 404],
+               fill=band(WA, 0), width=12)
+    return outline(img)
+
+
+def draw_lanterns():
+    img, d = canvas()
+    B = (140, 100, 64)    # wood post + bar
+    R = (206, 74, 58)     # red paper lantern
+    G = (216, 170, 78)    # gold cap + tassel
+    # ground post
+    d.rectangle([244, 168, 268, 452], fill=band(B, 1))
+    d.chord([246, 170, 266, 260], 195, 345, fill=band(B, 0))
+    # crossbar
+    d.rounded_rectangle([120, 150, 392, 178], radius=12, fill=band(B, 1))
+    d.chord([122, 150, 390, 168], 195, 345, fill=band(B, 0))
+    # three hanging lanterns
+    for lx in (176, 256, 336):
+        d.line([lx, 178, lx, 212], fill=band(B, 2), width=8)      # cord
+        d.ellipse([lx - 12, 198, lx + 12, 222], fill=band(G, 1))  # top cap
+        d.ellipse([lx - 46, 216, lx + 46, 320], fill=band(R, 1))  # body
+        d.chord([lx - 44, 218, lx + 44, 284], 195, 345, fill=band(R, 0))
+        d.chord([lx - 42, 286, lx + 42, 318], 15, 165, fill=band(R, 2))
+        d.line([lx - 30, 268, lx + 30, 268], fill=band(R, 2), width=6)  # rib
+        d.ellipse([lx - 12, 314, lx + 12, 338], fill=band(G, 1))  # bottom cap
+        d.line([lx, 336, lx, 364], fill=band(G, 2), width=8)      # tassel
+    return outline(img)
+
+
+def draw_bridge():
+    img, d = canvas()
+    S = (186, 178, 164)   # stone
+    WA = (120, 170, 202)  # water
+    # water flowing behind
+    d.rectangle([56, 402, 456, 460], fill=band(WA, 1))
+    d.line([84, 420, 200, 420], fill=band(WA, 0), width=8)
+    d.line([318, 434, 428, 434], fill=band(WA, 0), width=8)
+    # stone hump
+    d.pieslice([96, 250, 416, 610], 180, 360, fill=band(S, 1))
+    d.chord([104, 252, 408, 470], 195, 345, fill=band(S, 0))
+    # arch opening cut through, water + shadow under it
+    d.pieslice([176, 372, 336, 640], 180, 360, fill=(0, 0, 0, 0))
+    d.pieslice([182, 378, 330, 628], 180, 360, fill=band(WA, 1))
+    d.chord([182, 378, 330, 470], 180, 360, fill=band(WA, 2))
+    # railing coping + balusters along the crown
+    d.arc([112, 236, 400, 566], 200, 340, fill=band(S, 2), width=14)
+    for bx, by in ((160, 300), (208, 272), (256, 264), (304, 272), (352, 300)):
+        d.line([bx, by, bx, by - 30], fill=band(S, 2), width=9)
+    return outline(img)
+
+
+def draw_gazebo():
+    img, d = canvas()
+    P = (222, 214, 198)   # cream posts + rail
+    RF = (120, 152, 108)  # green roof
+    WD = (150, 110, 72)   # wood floor
+    # floor platform
+    d.ellipse([132, 424, 380, 462], fill=band(WD, 1))
+    d.chord([136, 442, 376, 462], 15, 165, fill=band(WD, 2))
+    # posts
+    for px0 in (168, 240, 272, 344):
+        d.rectangle([px0 - 11, 250, px0 + 11, 432], fill=band(P, 1))
+        d.chord([px0 - 11, 252, px0 + 11, 300], 195, 345, fill=band(P, 0))
+    # balustrade
+    d.rectangle([168, 360, 344, 388], fill=band(P, 1))
+    d.chord([170, 378, 342, 390], 15, 165, fill=band(P, 2))
+    # conical roof
+    d.polygon([(112, 262), (400, 262), (256, 116)], fill=band(RF, 1))
+    d.polygon([(112, 262), (256, 262), (256, 116)], fill=band(RF, 0))
+    d.polygon([(256, 262), (400, 262), (256, 116)], fill=band(RF, 2))
+    d.rounded_rectangle([104, 256, 408, 284], radius=12, fill=band(RF, 2))  # eave
+    d.ellipse([242, 92, 270, 120], fill=band(P, 0))   # finial
+    return outline(img)
+
+
+def draw_market():
+    img, d = canvas()
+    WD = (150, 110, 70)   # wood posts + counter
+    RS = (202, 82, 66)    # red awning stripe
+    CS = (226, 208, 170)  # cream awning stripe
+    F = (196, 132, 60)    # goods
+    # posts
+    for px0 in (150, 362):
+        d.rectangle([px0 - 12, 210, px0 + 12, 440], fill=band(WD, 1))
+        d.chord([px0 - 12, 212, px0 + 12, 262], 195, 345, fill=band(WD, 0))
+    # counter
+    d.rectangle([132, 372, 380, 424], fill=band(WD, 1))
+    d.chord([134, 374, 378, 398], 195, 345, fill=band(WD, 0))
+    d.chord([136, 410, 378, 424], 15, 165, fill=band(WD, 2))
+    # striped awning + scalloped edge
+    stripes = [(120, 176), (176, 232), (232, 288), (288, 344), (344, 400)]
+    for i, (xa, xb) in enumerate(stripes):
+        col = RS if i % 2 == 0 else CS
+        d.polygon([(xa, 150), (xb, 150), (xb, 236), (xa, 236)], fill=band(col, 1))
+        d.pieslice([xa, 214, xb, 262], 0, 180, fill=band(col, 2))
+    d.rounded_rectangle([112, 142, 408, 166], radius=10, fill=band(RS, 2))  # ridge
+    # goods on the counter
+    for gx in (188, 232, 300, 340):
+        d.ellipse([gx - 16, 346, gx + 16, 380], fill=band(F, 1))
+    return outline(img)
+
+
+def draw_koipond():
+    img, d = canvas()
+    RM = (150, 118, 78)   # earth rim
+    G = (120, 158, 92)    # grassy edge
+    WA = (108, 164, 200)  # water
+    O = (222, 132, 66)    # koi orange
+    C = (232, 224, 206)   # koi cream / patch
+    LP = (96, 150, 88)    # lily pad
+    # earth rim + grassy top edge
+    d.ellipse([88, 300, 424, 462], fill=band(RM, 1))
+    d.chord([92, 402, 420, 462], 15, 165, fill=band(RM, 2))
+    d.ellipse([104, 296, 408, 396], fill=band(G, 1))
+    # water
+    d.ellipse([120, 320, 392, 446], fill=band(WA, 1))
+    d.chord([128, 322, 384, 392], 195, 345, fill=band(WA, 0))
+    # koi fish
+    d.polygon([(198, 386), (150, 360), (152, 412)], fill=band(O, 2))  # tail
+    d.ellipse([196, 356, 316, 416], fill=band(O, 1))
+    d.ellipse([232, 366, 288, 406], fill=band(C, 1))   # cream patch
+    d.ellipse([292, 378, 308, 394], fill=OUTLINE)      # eye
+    # ripple
+    d.arc([300, 328, 372, 372], 200, 340, fill=band(WA, 0), width=7)
+    # lily pad with a notch
+    d.ellipse([300, 334, 360, 380], fill=band(LP, 1))
+    d.polygon([(330, 357), (362, 338), (358, 374)], fill=(0, 0, 0, 0))
+    return outline(img)
+
+
+def draw_windmill():
+    img, d = canvas()
+    T = (216, 200, 168)   # tower
+    CAP = (150, 96, 76)   # cap roof
+    WD = (140, 100, 64)   # sail wood + hub
+    CL = (232, 224, 204)  # sail cloth
+    DR = (120, 86, 56)    # door + window
+    # tapered tower
+    d.polygon([(196, 236), (316, 236), (338, 452), (174, 452)], fill=band(T, 1))
+    d.polygon([(196, 236), (256, 236), (256, 452), (174, 452)], fill=band(T, 0))
+    d.polygon([(256, 236), (316, 236), (338, 452), (256, 452)], fill=band(T, 2))
+    # cap
+    d.chord([182, 176, 330, 268], 180, 360, fill=band(CAP, 1))
+    d.chord([186, 178, 326, 232], 195, 345, fill=band(CAP, 0))
+    d.ellipse([248, 150, 264, 182], fill=band(CAP, 2))   # finial
+    # door + window
+    d.rounded_rectangle([234, 372, 278, 452], radius=20, fill=band(DR, 1))
+    d.ellipse([238, 300, 274, 336], fill=band(DR, 1))
+    # four-blade sail cross
+    hx, hy = 256, 214
+    L, w = 150, 20
+    for ang in (45, 135, 225, 315):
+        a = math.radians(ang)
+        ex, ey = hx + L * math.cos(a), hy + L * math.sin(a)
+        px = math.cos(a + math.pi / 2) * w
+        py = math.sin(a + math.pi / 2) * w
+        d.polygon([(hx + px, hy + py), (hx - px, hy - py),
+                   (ex - px, ey - py), (ex + px, ey + py)], fill=band(WD, 1))
+        d.polygon([(hx, hy), (ex, ey),
+                   (ex + px * 2.4, ey + py * 2.4)], fill=band(CL, 1))  # cloth
+    d.ellipse([236, 194, 276, 234], fill=band(WD, 2))   # hub
+    return outline(img)
+
+
 # ------------------------------------------------------------- driver
 
 SPRITES = {
@@ -608,6 +824,16 @@ SPRITES = {
         'vil-2': draw_vil_2,
         'vil-3': draw_vil_3,
     }},
+    'landmarks': {'dir': 'landmarks', 'draw': {
+        'bakery': draw_bakery,
+        'fountain': draw_fountain,
+        'lanterns': draw_lanterns,
+        'bridge': draw_bridge,
+        'gazebo': draw_gazebo,
+        'market': draw_market,
+        'koipond': draw_koipond,
+        'windmill': draw_windmill,
+    }},
 }
 
 
@@ -615,7 +841,8 @@ def contact_sheet():
     files = sorted((ROOT / 'assets').glob('creatures/*.png')) + \
             sorted((ROOT / 'assets').glob('pets/*.png')) + \
             sorted((ROOT / 'assets').glob('crops/*.png')) + \
-            sorted((ROOT / 'assets').glob('villagers/*.png'))
+            sorted((ROOT / 'assets').glob('villagers/*.png')) + \
+            sorted((ROOT / 'assets').glob('landmarks/*.png'))
     cols = 7
     rows = (len(files) + cols - 1) // cols
     sheet = Image.new('RGBA', (cols * 68, rows * 68), (40, 44, 52, 255))
