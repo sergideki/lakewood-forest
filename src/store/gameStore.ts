@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { GameState, CropId, SpeciesId, PetId } from '../engine/types';
+import type { GameState, CropId, SpeciesId, PetId, Station } from '../engine/types';
 import {
   createInitialState,
   plantCrop,
@@ -18,6 +18,7 @@ import {
   buildHabitat,
   collectHabitat,
   tradeWoodForFish,
+  recruitVillager,
 } from '../engine';
 import { serialize, deserialize, tryDeserialize } from '../persistence/save';
 import { computeAwayReport, AwayReport } from '../lib/awayReport';
@@ -34,7 +35,7 @@ interface GameStore {
   tick: (now: number) => void;
   plant: (plotId: string, cropId: CropId | null) => void;
   unlockCrop: (cropId: CropId) => void;
-  assign: (villagerId: string, to: 'farm' | null) => void;
+  assign: (villagerId: string, to: Station | null) => void;
   collect: () => void;
   assignCreatureTo: (creatureId: string, to: 'idle' | 'forage') => void;
   startDungeon: (dungeonId: string, creatureIds: string[]) => void;
@@ -49,6 +50,7 @@ interface GameStore {
   dismissDiscovery: () => void;
   dismissAwayReport: () => void;
   tradeWood: () => void;
+  recruit: () => void;
   save: () => void;
   exportState: () => string;
   importState: (json: string) => boolean;
@@ -168,6 +170,8 @@ export const useGameStore = create<GameStore>((set, get) => {
     dismissAwayReport: () => set({ awayReport: null }),
 
     tradeWood: () => commit(tradeWoodForFish(applyElapsed(get().state, Date.now()))),
+
+    recruit: () => commit(recruitVillager(applyElapsed(get().state, Date.now()), Math.random)),
 
     save: () => { if (get().loaded) persist(get().state); },
 

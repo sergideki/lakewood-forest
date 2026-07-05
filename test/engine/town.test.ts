@@ -138,12 +138,12 @@ describe('multipliers wired into caps and rates', () => {
   it('barn-silo scales the barnCap of a produced resource and stays an integer', () => {
     const s0 = createInitialState(0);
     expect(barnCap(s0)).toEqual({ gold: 0, wood: 0, acorns: 0 }); // no production -> no cap
-    let s = plantCrop(s0, 'plot-1', 'wheat'); // 0.05 gold/s -> 4320/day (above the 500 floor)
+    let s = plantCrop(s0, 'plot-1', 'wheat'); // 0.065 gold/s -> 5616/day (above the 500 floor)
     s = assignVillager(s, 'vil-1', 'farm');
     const base = barnCap(s).gold;
-    expect(base).toBe(4320);
+    expect(base).toBe(5616);
     const s1 = { ...s, upgrades: { 'barn-silo': 1 } };
-    expect(barnCap(s1).gold).toBe(Math.round(base * 1.5)); // 6480
+    expect(barnCap(s1).gold).toBe(Math.round(base * 1.5)); // 8424
     expect(Number.isInteger(barnCap(s1).gold)).toBe(true);
   });
 

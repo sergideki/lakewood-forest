@@ -1,5 +1,5 @@
 import type { GameState } from './types';
-import { SPECIES, PET_IDS, UPGRADE_IDS, UPGRADES } from './content';
+import { SPECIES, PET_IDS, UPGRADE_IDS, UPGRADES, MAX_VILLAGERS } from './content';
 
 export interface Achievement {
   id: string;
@@ -44,6 +44,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     progress: (s) => clamp(s.lifetime.wood, 1000) },
   { id: 'townsfolk', name: 'Townsfolk', emoji: '🏘️', description: 'Max every town upgrade',
     progress: (s) => clamp(maxedUpgrades(s), UPGRADE_IDS.length) },
+  { id: 'full-house', name: 'Full House', emoji: '👪', description: 'Recruit a full village (8)',
+    progress: (s) => clamp(s.villagers.length, MAX_VILLAGERS) },
 ];
 
 export function isComplete(state: GameState, a: Achievement): boolean {

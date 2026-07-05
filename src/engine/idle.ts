@@ -3,6 +3,7 @@ import { accrueBarn } from './farm';
 import { accrueSatchel } from './forest';
 import { dripForagerXp } from './creatures';
 import { accrueCreel, accrueMarigold } from './lake';
+import { dripVillagerXp } from './villagers';
 
 /**
  * Apply all offline progress between state.meta.lastSeen and `now` (epoch ms).
@@ -17,6 +18,7 @@ export function applyElapsed(state: GameState, now: number): GameState {
   next = accrueCreel(next, elapsedSec);
   next = accrueMarigold(next, elapsedSec);
   next = dripForagerXp(next, elapsedSec);
+  next = dripVillagerXp(next, elapsedSec);
   // Never let lastSeen move backward: a clock rollback (DST/NTP shift, manual clock
   // change) must not create a huge forward gap on the next call — a repeatable dupe.
   const lastSeen = Math.max(now, state.meta.lastSeen);

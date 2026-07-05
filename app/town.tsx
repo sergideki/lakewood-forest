@@ -6,6 +6,7 @@ import { useGameStore } from '../src/store/gameStore';
 import { ResourceBar } from '../src/ui/components/ResourceBar';
 import { UpgradeShop } from '../src/ui/components/UpgradeShop';
 import { TreatsCard } from '../src/ui/components/TreatsCard';
+import { RecruitCard } from '../src/ui/components/RecruitCard';
 import { canTradeWoodForFish, TRADE_WOOD_COST, TRADE_FISH_YIELD } from '../src/engine';
 
 function TradeCard() {
@@ -48,6 +49,7 @@ export default function Town() {
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <UpgradeShop />
         <TreatsCard />
+        <RecruitCard />
         <TradeCard />
       </ScrollView>
     </SafeAreaView>

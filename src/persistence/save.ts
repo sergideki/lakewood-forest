@@ -1,8 +1,8 @@
 import type { GameState } from '../engine/types';
 import { createInitialState, makeCreature } from '../engine';
-import { DUNGEONS, STARTER_SPECIES, HABITATS, CROP_IDS, STARTER_CROPS } from '../engine/content';
+import { DUNGEONS, STARTER_SPECIES, HABITATS, CROP_IDS, STARTER_CROPS, SPECIALTY_BY_ID } from '../engine/content';
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 interface SaveEnvelope {
   version: number;
@@ -73,6 +73,7 @@ function migrate(fromVersion: number, state: GameState): GameState {
   // Always run (not version-gated): per-field ?? makes it idempotent, and a same-version (v6)
   // blob with a partial lifetime object (e.g. a hand-edited import) still needs backfilling.
   s = addLifetimeCounters(s);
+  s = addVillagerDepth(s);   // unconditional, per-field ?? — same discipline as addLifetimeCounters
   return s;
 }
 
@@ -132,5 +133,22 @@ function addLifetimeCounters(old: GameState): GameState {
       acorns: l?.acorns ?? 0,
       fish: l?.fish ?? 0,
     },
+  };
+}
+
+/** v6->v7: villagers gain specialty/level/xp. Per-field ?? (never whole-object) so a partial blob
+ *  can't leave undefined fields that villagerBoost turns into NaN. Runs unconditionally (idempotent). */
+function addVillagerDepth(old: GameState): GameState {
+  return {
+    ...old,
+    villagers: old.villagers.map((v) => {
+      const w = v as Partial<GameState['villagers'][number]>;
+      return {
+        ...v,
+        specialty: w.specialty ?? SPECIALTY_BY_ID[v.id] ?? 'farm',
+        level: w.level ?? 1,
+        xp: w.xp ?? 0,
+      };
+    }),
   };
 }

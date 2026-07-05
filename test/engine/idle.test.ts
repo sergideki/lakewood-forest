@@ -13,7 +13,7 @@ describe('applyElapsed', () => {
   it('fills the barn by the wall-clock gap and advances lastSeen', () => {
     const s0 = activeFarm(1_000); // lastSeen = 1000ms
     const s1 = applyElapsed(s0, 1_000 + 200_000); // +200s
-    expect(s1.storage.barn.gold).toBeCloseTo(10, 5); // 0.05 * 200
+    expect(s1.storage.barn.gold).toBeCloseTo(13, 5); // 0.05 * 1.3 * 200
     expect(s1.meta.lastSeen).toBe(1_000 + 200_000);
   });
 
@@ -30,7 +30,7 @@ describe('applyElapsed', () => {
     expect(rolled.storage.barn.gold).toBe(0);
     expect(rolled.meta.lastSeen).toBe(1_000_000);
     const forward = applyElapsed(rolled, 1_000_000 + 200_000); // +200s from the real lastSeen
-    expect(forward.storage.barn.gold).toBeCloseTo(10, 5); // ~200s * 0.05, NOT a windfall
+    expect(forward.storage.barn.gold).toBeCloseTo(13, 5); // ~200s * 0.065, NOT a windfall
     expect(forward.meta.lastSeen).toBe(1_000_000 + 200_000);
   });
 
@@ -38,7 +38,9 @@ describe('applyElapsed', () => {
     const s0 = activeFarm(0);
     const week = 7 * 24 * 3600 * 1000;
     const s1 = applyElapsed(s0, week);
-    expect(s1.storage.barn.gold).toBe(barnCap(s1).gold);
+    // Cap is sampled at accrual time (window-start, pre-drip): accrueBarn fills to s0's cap
+    // before drip-last leveling raises the villager's boost, so the end-state cap is higher.
+    expect(s1.storage.barn.gold).toBe(barnCap(s0).gold);
   });
 
   it('does not mutate its input (immutability)', () => {
@@ -48,6 +50,12 @@ describe('applyElapsed', () => {
     expect(s0.meta.lastSeen).toBe(before); // input untouched
     expect(s0.storage.barn.gold).toBe(0);
     expect(result).not.toBe(s0);
+  });
+
+  it('applyElapsed drips XP to assigned villagers', () => {
+    const s0 = activeFarm(1_000); // assigns vil-1 to farm
+    const s1 = applyElapsed(s0, 1_000 + 100_000); // +100s
+    expect(s1.villagers.find((v) => v.id === 'vil-1')!.xp).toBeGreaterThan(0);
   });
 });
 

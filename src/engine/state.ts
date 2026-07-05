@@ -12,9 +12,9 @@ export function createInitialState(now: number): GameState {
     ],
     unlockedCrops: [...STARTER_CROPS],
     villagers: [
-      { id: 'vil-1', name: 'Pip', emoji: '🧑‍🌾', assignedTo: null },
-      { id: 'vil-2', name: 'Nan', emoji: '👵', assignedTo: null },
-      { id: 'vil-3', name: 'Rowan', emoji: '🧔', assignedTo: null },
+      { id: 'vil-1', name: 'Pip', emoji: '🧑‍🌾', specialty: 'farm', level: 1, xp: 0, assignedTo: null },
+      { id: 'vil-2', name: 'Nan', emoji: '👵', specialty: 'forest', level: 1, xp: 0, assignedTo: null },
+      { id: 'vil-3', name: 'Rowan', emoji: '🧔', specialty: 'lake', level: 1, xp: 0, assignedTo: null },
     ],
     creatures: STARTER_SPECIES.map(makeCreature),
     storage: { barn: { gold: 0, wood: 0, acorns: 0 }, satchel: { wood: 0, acorn: 0 }, creel: { fish: 0 } },

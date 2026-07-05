@@ -1,8 +1,9 @@
-import type { GameState, CropId, BarnResource, Lifetime } from './types';
+import type { GameState, CropId, BarnResource, Lifetime, Station } from './types';
 import { CROPS } from './content';
 import { barnCapMult } from './town';
 import { petLeverMult } from './pets';
 import { bumpLifetime } from './lifetime';
+import { villagerBoost } from './villagers';
 
 /** The barn holds this many hours of the current production rate before it's "full". */
 export const BARN_HOURS = 24;
@@ -18,9 +19,9 @@ function zeroRates(): Record<BarnResource, number> {
 /** Per-resource gold/wood/acorns produced per second across all planted PRODUCER crops. */
 export function farmRatesPerSec(state: GameState): Record<BarnResource, number> {
   const rates = zeroRates();
-  const assigned = state.villagers.filter((v) => v.assignedTo === 'farm').length;
-  if (assigned === 0) return rates;
-  const multiplier = (1 + 0.25 * (assigned - 1)) * petLeverMult(state, 'farmRate');
+  const boost = villagerBoost(state, 'farm');
+  if (boost === 0) return rates;                       // gate: no farm villagers
+  const multiplier = boost * petLeverMult(state, 'farmRate');   // KEEP petLeverMult (crawdad buff)
   for (const p of state.plots) {
     if (!p.crop) continue;
     const crop = CROPS[p.crop];
@@ -89,7 +90,7 @@ export function plantCrop(state: GameState, plotId: string, cropId: CropId | nul
 export function assignVillager(
   state: GameState,
   villagerId: string,
-  to: 'farm' | null,
+  to: Station | null,
 ): GameState {
   return {
     ...state,

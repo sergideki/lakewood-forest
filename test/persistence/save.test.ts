@@ -2,6 +2,24 @@ import { describe, it, expect } from 'vitest';
 import { createInitialState, plantCrop, SPECIES, HABITATS } from '../../src/engine';
 import { serialize, deserialize, tryDeserialize, SAVE_VERSION } from '../../src/persistence/save';
 
+describe('v6 -> v7 villager depth migration', () => {
+  it('seeds new-state starters with specialty/level/xp', () => {
+    const s = createInitialState(0);
+    expect(s.villagers.map((v) => v.specialty)).toEqual(['farm', 'forest', 'lake']);
+    expect(s.villagers.every((v) => v.level === 1 && v.xp === 0)).toBe(true);
+  });
+  it('backfills a v6 villager (no specialty/level/xp) without wiping', () => {
+    const v6 = { ...createInitialState(0) };
+    (v6 as { villagers: unknown }).villagers = [
+      { id: 'vil-1', name: 'Pip', emoji: '🧑‍🌾', assignedTo: 'farm' },
+      { id: 'vil-2', name: 'Nan', emoji: '👵', assignedTo: null },
+    ];
+    const restored = deserialize(JSON.stringify({ version: 6, state: v6 }));
+    expect(restored.villagers[0]).toMatchObject({ specialty: 'farm', level: 1, xp: 0, assignedTo: 'farm' });
+    expect(restored.villagers[1].specialty).toBe('forest'); // by id
+  });
+});
+
 describe('tryDeserialize (strict import)', () => {
   it('round-trips a real backup and migrates it', () => {
     const s = { ...createInitialState(0), resources: { gold: 7, wood: 0, acorns: 0, fish: 3 } };
@@ -70,7 +88,7 @@ describe('v1 -> v2 migration', () => {
   it('leaves a current save untouched', () => {
     const v2 = serialize(createInitialState(1));
     expect(JSON.parse(v2).version).toBe(SAVE_VERSION);
-    expect(SAVE_VERSION).toBe(6);
+    expect(SAVE_VERSION).toBe(7);
     const restored = deserialize(v2);
     expect(restored.creatures).toHaveLength(2);
     expect(Object.keys(SPECIES).length).toBeGreaterThanOrEqual(10);
