@@ -205,6 +205,46 @@ The store `assign` action widens its `to` param to `Station | null`. New `recrui
 
 ---
 
+## Skeptic-hardening notes (doubt-driven cycle 1, 2026-07-05)
+
+Ground-truth findings folded in so the build doesn't rediscover them. The contamination firewall
+(§Pillar 1 trap) was **verified correct** — `creelCap`/`accrueCreel` both consume `fishRatePerSec`, so
+multiplying its whole return reaches them, and nothing calls `forageRatePerSec('fish')` directly.
+
+- **C1 (the #1 landmine): `villagerBoost` does `0.15 * v.level * …` — any villager missing `level`/
+  `specialty` yields `NaN`**, which flows into accrual and persists (`JSON.stringify(NaN)`→`null`) = a
+  corrupted save. ALL THREE creation paths must set `specialty`/`level`/`xp`: `createInitialState`
+  (`state.ts:14-18`, currently only id/name/emoji/assignedTo), `recruitVillager`, and the
+  `addVillagerDepth` migration. Keep the existing no-NaN sentinel `farm.test.ts:47`.
+- **M1: preserve `* petLeverMult(state,'farmRate')`.** The real line is `const multiplier = (1 +
+  0.25*(assigned-1)) * petLeverMult(state,'farmRate')` (`farm.ts:23`). Swap ONLY the first factor →
+  `const multiplier = villagerBoost(state,'farm') * petLeverMult(state,'farmRate')`. Dropping the pet
+  factor silently kills the crawdad farm buff (`farm.test.ts:149-157`).
+- **H2: the farm-formula change legitimately breaks these existing assertions — recompute, don't
+  delete** (Pip is farm-specialty L1 → ×1.30 vs old ×1.0):
+  - `farm.test.ts:35-37` "routes each producer crop": `0.05` → `0.065`.
+  - `farm.test.ts:96` + `:123` accrueBarn 200s: `10` → `13`.
+  - `idle.test.ts:16` + `:33` (barn.gold via applyElapsed): `~10` → `13`.
+  - `farm.test.ts:55` "+25% per extra villager" is **conceptually dead** — the +25%/extra mechanic is
+    gone. REWRITE it to assert the new formula (e.g. two farm-specialty villagers vs one; or a
+    specialist vs generalist on the same station), not just a new number.
+- **H1: `save.test.ts:73` `expect(SAVE_VERSION).toBe(6)` → `7`.** Add a v6→v7 migration case.
+- **H3: `achievements.test.ts:13` asserts the EXACT sorted id list** — add `'full-house'` (achievement
+  id is `full-house`), list length 10 → 11. `completedCount===0` at `:22` stays green (3 villagers < 8).
+- **M2: `recruitCost` returns a fresh object** — in `VillagerRow`, select `s.state.villagers` +
+  `s.state.resources` and compute the cost in the RENDER BODY. Never `useGameStore(s =>
+  recruitCost(...))` (zustand v5 `Object.is` re-render storm; the codebase flags this at
+  `DungeonCard.tsx:26`).
+- **M3: add `dripVillagerXp` at the END of `applyElapsed`** (`idle.ts`), right after `dripForagerXp` —
+  after all four accruals, so a mid-tick level-up doesn't retroactively change the same tick's rate
+  (matches the established drip-last convention).
+- **Verified fine:** save chain is UNCONDITIONAL (`addLifetimeCounters` runs every load, `save.ts:75`)
+  — chain `addVillagerDepth` the same way (unconditional, per-field `??`); round-trip `toEqual`
+  (`save.test.ts:25`) stays green ONLY because C1 gives `createInitialState` the new fields. `Rng =
+  () => number` called 0..1 — `recruitVillager(state, rng)` fits; fix the draw order (name then
+  specialty) for determinism. Villagers are never removed → `'vil-'+(length+1)` ids stay contiguous,
+  no collision in normal play.
+
 ## Sequencing
 
 1. Data model + `Station` type + `villagerBoost` + migration v6→v7 (TDD).
