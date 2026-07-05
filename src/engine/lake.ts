@@ -15,10 +15,12 @@ import { DISCOVERY_WEIGHT, makeCreature } from './creatures';
 import { forageRatePerSec } from './forest';
 import { petLeverMult, petCatchBonus } from './pets';
 import { bumpLifetime } from './lifetime';
+import { villagerBoost } from './villagers';
 
-/** Fish/sec = flat rod base + all fish-affinity foragers (creature part is forageMult-boosted). */
+/** Fish/sec = flat rod base + all fish-affinity foragers (creature part is forageMult-boosted),
+ *  then this station's villager boost applied to the whole rate. */
 export function fishRatePerSec(state: GameState): number {
-  return BASE_ROD_RATE + forageRatePerSec(state, 'fish');
+  return (BASE_ROD_RATE + forageRatePerSec(state, 'fish')) * villagerBoost(state, 'lake');
 }
 
 /** Creel capacity = a day of the current fish rate, floored, then lifted by pet creel bonus. */

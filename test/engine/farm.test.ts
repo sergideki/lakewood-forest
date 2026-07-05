@@ -32,9 +32,9 @@ describe('farmRatesPerSec', () => {
     s = plantCrop(s, 'plot-3', 'sapling'); // wood 6/180 = 0.0333
     s = assignVillager(s, 'vil-1', 'farm');
     const r = farmRatesPerSec(s);
-    expect(r.gold).toBeCloseTo(0.05, 5);
-    expect(r.acorns).toBeCloseTo(6 / 180, 5);
-    expect(r.wood).toBeCloseTo(6 / 180, 5);
+    expect(r.gold).toBeCloseTo(0.05 * 1.3, 5);
+    expect(r.acorns).toBeCloseTo((6 / 180) * 1.3, 5);
+    expect(r.wood).toBeCloseTo((6 / 180) * 1.3, 5);
   });
 
   it('a planted modifier crop (marigold) contributes no rate and no NaN', () => {
@@ -47,12 +47,13 @@ describe('farmRatesPerSec', () => {
     expect(Number.isNaN(r.gold + r.wood + r.acorns)).toBe(false);
   });
 
-  it('gives +25% per extra assigned villager', () => {
+  it('a farm specialist doubles a generalist on the same station', () => {
     let s = createInitialState(0);
-    s = plantCrop(s, 'plot-1', 'wheat');   // base 0.05/s gold
-    s = assignVillager(s, 'vil-1', 'farm');
-    s = assignVillager(s, 'vil-2', 'farm'); // x1.25
-    expect(farmRatesPerSec(s).gold).toBeCloseTo(0.0625, 5);
+    s = plantCrop(s, 'plot-1', 'wheat');       // base 0.05/s gold
+    s = assignVillager(s, 'vil-1', 'farm');     // Pip: farm specialist L1 -> x1.30
+    expect(farmRatesPerSec(s).gold).toBeCloseTo(0.05 * 1.3, 5);
+    s = assignVillager(s, 'vil-2', 'farm');     // Nan: forest specialist on farm = generalist +0.15
+    expect(farmRatesPerSec(s).gold).toBeCloseTo(0.05 * 1.45, 5);
   });
 });
 
@@ -92,8 +93,8 @@ describe('accrueBarn', () => {
     let s = createInitialState(0);
     s = plantCrop(s, 'plot-1', 'wheat'); // 0.05 gold/s
     s = assignVillager(s, 'vil-1', 'farm');
-    s = accrueBarn(s, 200);              // 0.05 * 200 = 10 gold
-    expect(s.storage.barn.gold).toBeCloseTo(10, 5);
+    s = accrueBarn(s, 200);              // 0.05 * 1.3 * 200 = 13 gold
+    expect(s.storage.barn.gold).toBeCloseTo(13, 5);
     expect(s.storage.barn.wood).toBe(0);
   });
 
@@ -120,7 +121,7 @@ describe('accrueBarn', () => {
     const result = accrueBarn(s, 200);
     expect(s.storage.barn.gold).toBe(0);
     expect(result).not.toBe(s);
-    expect(result.storage.barn.gold).toBeCloseTo(10, 5);
+    expect(result.storage.barn.gold).toBeCloseTo(13, 5);
   });
 });
 

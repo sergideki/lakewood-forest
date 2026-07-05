@@ -3,6 +3,7 @@ import { creatureForageOutput, rollDiscovery, teamPower, grantXp } from './creat
 import { getDungeon } from './content';
 import { satchelCapMult, forageMult } from './town';
 import { bumpLifetime } from './lifetime';
+import { villagerBoost } from './villagers';
 
 export const SATCHEL_HOURS = 24;
 export const SATCHEL_FLOOR = 200;
@@ -16,9 +17,14 @@ export function forageRatePerSec(state: GameState, material: Material): number {
   return base * forageMult(state);
 }
 
+/** Forest satchel rate for a material = pure forage output * this station's villager boost. */
+export function satchelRatePerSec(state: GameState, material: Material): number {
+  return forageRatePerSec(state, material) * villagerBoost(state, 'forest');
+}
+
 /** Combined satchel capacity = a day's worth of the current total forage rate, floored, then upgraded. */
 export function satchelCap(state: GameState): number {
-  const perSec = forageRatePerSec(state, 'wood') + forageRatePerSec(state, 'acorn');
+  const perSec = satchelRatePerSec(state, 'wood') + satchelRatePerSec(state, 'acorn');
   const derived = Math.max(SATCHEL_FLOOR, Math.round(perSec * SATCHEL_HOURS * 3600));
   return Math.round(derived * satchelCapMult(state));
 }
@@ -26,8 +32,8 @@ export function satchelCap(state: GameState): number {
 /** Fill wood + acorn by their rates over `elapsedSec`, clamped so their sum <= cap. */
 export function accrueSatchel(state: GameState, elapsedSec: number): GameState {
   if (elapsedSec <= 0) return state;
-  const woodRate = forageRatePerSec(state, 'wood');
-  const acornRate = forageRatePerSec(state, 'acorn');
+  const woodRate = satchelRatePerSec(state, 'wood');
+  const acornRate = satchelRatePerSec(state, 'acorn');
   const cap = satchelCap(state);
   const { wood, acorn } = state.storage.satchel;
   const room = Math.max(0, cap - (wood + acorn));

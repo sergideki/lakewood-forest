@@ -13,7 +13,7 @@ describe('applyElapsed', () => {
   it('fills the barn by the wall-clock gap and advances lastSeen', () => {
     const s0 = activeFarm(1_000); // lastSeen = 1000ms
     const s1 = applyElapsed(s0, 1_000 + 200_000); // +200s
-    expect(s1.storage.barn.gold).toBeCloseTo(10, 5); // 0.05 * 200
+    expect(s1.storage.barn.gold).toBeCloseTo(13, 5); // 0.05 * 1.3 * 200
     expect(s1.meta.lastSeen).toBe(1_000 + 200_000);
   });
 
@@ -30,7 +30,7 @@ describe('applyElapsed', () => {
     expect(rolled.storage.barn.gold).toBe(0);
     expect(rolled.meta.lastSeen).toBe(1_000_000);
     const forward = applyElapsed(rolled, 1_000_000 + 200_000); // +200s from the real lastSeen
-    expect(forward.storage.barn.gold).toBeCloseTo(10, 5); // ~200s * 0.05, NOT a windfall
+    expect(forward.storage.barn.gold).toBeCloseTo(13, 5); // ~200s * 0.065, NOT a windfall
     expect(forward.meta.lastSeen).toBe(1_000_000 + 200_000);
   });
 
